@@ -2,7 +2,6 @@ CREATE DATABASE IF NOT EXISTS GRP35_db;
 
 USE GRP35_db;
 
--- Create table: Customers
 CREATE TABLE Customers (
     customer_id INT AUTO_INCREMENT PRIMARY KEY,
     last_name VARCHAR(50) NOT NULL,
@@ -14,7 +13,6 @@ CREATE TABLE Customers (
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
 );
 
--- Create table: Menus
 CREATE TABLE Menus (
     menu_id INT AUTO_INCREMENT PRIMARY KEY,
     menu_name VARCHAR(50) NOT NULL,
@@ -26,7 +24,6 @@ CREATE TABLE Menus (
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
 );
 
--- Create table: Orders
 CREATE TABLE Orders (
     order_id INT AUTO_INCREMENT PRIMARY KEY,
     preparation_time TIME NOT NULL,
@@ -39,7 +36,6 @@ CREATE TABLE Orders (
     FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
 );
 
--- Create table: Order lines
 CREATE TABLE Order_lines (
     order_line_id INT AUTO_INCREMENT PRIMARY KEY,
     menu_quantity INT NOT NULL CHECK (menu_quantity > 0),
@@ -54,7 +50,6 @@ CREATE TABLE Order_lines (
     FOREIGN KEY (menu_id) REFERENCES Menus(menu_id)
 );
 
--- Create table: Payments
 CREATE TABLE Payments (
     payment_id INT AUTO_INCREMENT PRIMARY KEY,
     date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -74,7 +69,6 @@ CREATE TABLE Payments (
     FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
 );
 
--- Create table: Admins
 CREATE TABLE Admins (
     admin_id INT AUTO_INCREMENT PRIMARY KEY,
     last_name VARCHAR(50) NOT NULL,
