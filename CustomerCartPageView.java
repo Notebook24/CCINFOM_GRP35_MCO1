@@ -1,101 +1,157 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * Designs the Customer Cart Page of the Restaurant App.
- */
 public class CustomerCartPageView {
     private JFrame frame;
     private JPanel headerPanel, cartPanel, footerPanel;
     private JButton logoutButton, settingsButton, checkoutButton;
-    private JLabel logoLabel, cartTitleLabel, totalLabel;
+    private JLabel logoLabel, totalCostLabel, prepTimeLabel;
 
-    /**
-     * Constructor for CustomerCartPageView class.
-     */
-    public CustomerCartPageView() {
-        // Frame setup
+    private List<JButton> cartButtons;
+    private List<JButton> plusButtons;
+    private List<JButton> minusButtons;
+    private List<JLabel> quantityLabels;
+
+    public CustomerCartPageView(){
         frame = new JFrame("Customer Cart Page");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(700, 500);
-        frame.setLayout(new BorderLayout());
+        frame.setSize(1000, 600);
+        frame.setLayout(new BorderLayout(10, 10));
         frame.setLocationRelativeTo(null);
 
-        // Header (Restaurant logo + right buttons)
         headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
         logoLabel = new JLabel("Restaurant Logo");
+        logoLabel.setFont(new Font("Arial", Font.BOLD, 12));
 
         logoutButton = new JButton("Log out");
         settingsButton = new JButton("Settings");
-
         JPanel rightHeaderPanel = new JPanel();
         rightHeaderPanel.add(logoutButton);
         rightHeaderPanel.add(settingsButton);
 
         headerPanel.add(logoLabel, BorderLayout.WEST);
         headerPanel.add(rightHeaderPanel, BorderLayout.EAST);
+
         frame.add(headerPanel, BorderLayout.NORTH);
 
-        // Main cart section
         cartPanel = new JPanel();
-        cartPanel.setLayout(new BorderLayout());
-        cartPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        cartPanel.setLayout(new GridLayout(0, 1, 10, 10));
+        cartPanel.setBorder(BorderFactory.createEmptyBorder(10, 40, 10, 40));
+        JScrollPane scrollPane = new JScrollPane(cartPanel);
+        frame.add(scrollPane, BorderLayout.CENTER);
 
-        // Title
-        cartTitleLabel = new JLabel("Shopping Cart");
-        cartTitleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.add(cartTitleLabel, BorderLayout.WEST);
-
-        // Item section (sample restaurant items)
-        JPanel itemsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
-        itemsPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
-
-        // Example placeholder items
-        for (int i = 1; i <= 3; i++) {
-            JPanel itemPanel = new JPanel();
-            itemPanel.setLayout(new BoxLayout(itemPanel, BoxLayout.Y_AXIS));
-            itemPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-
-            JLabel restaurantName = new JLabel("Restaurant name");
-            JLabel itemsLabel = new JLabel("items");
-            restaurantName.setAlignmentX(Component.CENTER_ALIGNMENT);
-            itemsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-            itemPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-            itemPanel.add(restaurantName);
-            itemPanel.add(itemsLabel);
-            itemPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-
-            itemsPanel.add(itemPanel);
-        }
-
-        cartPanel.add(titlePanel, BorderLayout.NORTH);
-        cartPanel.add(itemsPanel, BorderLayout.CENTER);
-        frame.add(cartPanel, BorderLayout.CENTER);
-
-        // Footer (Checkout button + Total)
         footerPanel = new JPanel(new BorderLayout());
-        footerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        footerPanel.setBorder(BorderFactory.createEmptyBorder(10, 40, 10, 40));
+
+        JPanel infoPanel = new JPanel(new GridLayout(2, 1));
+        totalCostLabel = new JLabel("Total Cost:");
+        prepTimeLabel = new JLabel("Total Prep time:");
+        infoPanel.add(totalCostLabel);
+        infoPanel.add(prepTimeLabel);
 
         checkoutButton = new JButton("Checkout");
-        totalLabel = new JLabel("Total: ₱0.00");
-        totalLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        JPanel checkoutPanel = new JPanel();
+        checkoutPanel.add(checkoutButton);
 
-        footerPanel.add(checkoutButton, BorderLayout.WEST);
-        footerPanel.add(totalLabel, BorderLayout.EAST);
+        footerPanel.add(infoPanel, BorderLayout.WEST);
+        footerPanel.add(checkoutPanel, BorderLayout.EAST);
 
         frame.add(footerPanel, BorderLayout.SOUTH);
 
-        // Display frame
         frame.setVisible(true);
     }
 
-    // Main method to test UI
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(CustomerCartPageView::new);
+    public void displayProducts(List<MenuProduct> products){
+        cartPanel.removeAll();
+
+        cartButtons = new ArrayList<>();
+        plusButtons = new ArrayList<>();
+        minusButtons = new ArrayList<>();
+        quantityLabels = new ArrayList<>();
+
+        JPanel headerRow = new JPanel(new GridLayout(1, 6));
+        headerRow.add(new JLabel("Product name"));
+        headerRow.add(new JLabel("Description"));
+        headerRow.add(new JLabel("Price"));
+        headerRow.add(new JLabel("Prep Time"));
+        headerRow.add(new JLabel("Add to Cart"));
+        headerRow.add(new JLabel("Quantity", SwingConstants.CENTER));
+        cartPanel.add(headerRow);
+
+        for (MenuProduct product : products){
+            JPanel itemPanel = new JPanel(new GridLayout(1, 6, 10, 10));
+            itemPanel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+
+            JLabel nameLabel = new JLabel(product.getName());
+            JLabel descLabel = new JLabel(product.getDescription());
+            JLabel priceLabel = new JLabel("₱" + String.format("%.2f", product.getPrice()));
+            JLabel prepTimeLabel = new JLabel(product.getPrepTime());
+
+            JButton cartButton = new JButton("Add to Cart");
+            JButton plusButton = new JButton("+");
+            JButton minusButton = new JButton("-");
+            JLabel quantityLabel = new JLabel("0", SwingConstants.CENTER);
+
+            plusButton.setEnabled(false);
+            minusButton.setEnabled(false);
+
+            JPanel quantityPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+            quantityPanel.add(minusButton);
+            quantityPanel.add(quantityLabel);
+            quantityPanel.add(plusButton);
+
+            itemPanel.add(nameLabel);
+            itemPanel.add(descLabel);
+            itemPanel.add(priceLabel);
+            itemPanel.add(prepTimeLabel);
+            itemPanel.add(cartButton);
+            itemPanel.add(quantityPanel);
+
+            cartPanel.add(itemPanel);
+
+            cartButtons.add(cartButton);
+            plusButtons.add(plusButton);
+            minusButtons.add(minusButton);
+            quantityLabels.add(quantityLabel);
+        }
+
+        cartPanel.revalidate();
+        cartPanel.repaint();
+    }
+
+    public JFrame getFrame(){
+        return frame;
+    }
+
+    public List<JButton> getCartButtons(){
+        return cartButtons;
+    }
+
+    public List<JButton> getPlusButtons(){
+        return plusButtons;
+    }
+
+    public List<JButton> getMinusButtons(){
+        return minusButtons;
+    }
+
+    public List<JLabel> getQuantityLabels(){
+        return quantityLabels;
+    }
+
+    public JButton getCheckoutButton(){
+        return checkoutButton;
+    }
+
+    public JLabel getTotalCostLabel(){
+        return totalCostLabel;
+    }
+
+    public JLabel getPrepTimeLabel(){
+        return prepTimeLabel;
     }
 }

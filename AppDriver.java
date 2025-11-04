@@ -2,7 +2,8 @@ public class AppDriver {
     public static void main(String[] args) {
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                new LandingPageView();
+                LandingPageView landingView = new LandingPageView();
+                new LandingPageController(landingView);
             }
         });
     }

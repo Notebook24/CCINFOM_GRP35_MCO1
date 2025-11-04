@@ -15,25 +15,20 @@ public class DBConnection{
      * Password of the SQL account.
      */
     private static final String PASSWORD = "Choichoi22";
-    /**
-     * This variable will hold the database connection.
-     */
-    private static Connection conn = null;
 
     /**
      * Creates a connection between the Java applictaion and the database.
      * 
      * @return conn: A variable which holds the connection between the Java application and the database.
      */
-    public static Connection getConnection(){
-        if (conn == null){
-            try{
-                conn = DriverManager.getConnection(URL, USER, PASSWORD);
-            }
-            catch(SQLException e){
-                e.printStackTrace();
-            }
+    public static Connection getConnection() throws SQLException{
+        try{
+            Class.forName("com.mysql.cj.jdbc.Driver");
         }
-        return conn;
+        catch (ClassNotFoundException e){
+            System.out.println("MySQL Driver not found!");
+            e.printStackTrace();
+        }
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 }

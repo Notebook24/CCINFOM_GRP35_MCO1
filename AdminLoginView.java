@@ -1,22 +1,23 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
+import java.util.regex.Pattern;
+
 
 /**
- * Designs the Log in page of the Calendar App in line with its controller
+ * Designs the Log in page in line with its controller
  */
-public class AccountLoginView{
+public class AdminLoginView{
     private JFrame frame;
-    private JTextField usernameField;
+    private JTextField emailField;
     private JPasswordField passwordField;
     private JButton backButton, loginButton;
-    private JLabel messageLabel, userLabel, passLabel;
+    private JLabel warningLabel, userLabel, passLabel;
     private JPanel formPanel, userPanel, passPanel, buttonPanel, southPanel;
 
     /**
-     * Constructor for LoginView class
+     * Constructor for Sign Up View class.
      */
-    public AccountLoginView() {
+    public AdminLoginView() {
         // frame config
         frame = new JFrame("Log In");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -29,13 +30,19 @@ public class AccountLoginView{
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 10, 40)); // padding
 
-        // username row with label and text field
+        warningLabel = new JLabel("", SwingConstants.CENTER);
+        warningLabel.setForeground(Color.RED);
+        warningLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formPanel.add(warningLabel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // email row with label and text field
         userPanel = new JPanel(new BorderLayout(10, 0));
-        userLabel = new JLabel("Username:");
-        usernameField = new JTextField();
-        usernameField.setPreferredSize(new Dimension(200, 25));
+        userLabel = new JLabel("Email:");
+        emailField = new JTextField();
+        emailField.setPreferredSize(new Dimension(200, 25));
         userPanel.add(userLabel, BorderLayout.WEST);
-        userPanel.add(usernameField, BorderLayout.CENTER);
+        userPanel.add(emailField, BorderLayout.CENTER);
 
         // password row with label and text field
         passPanel = new JPanel(new BorderLayout(10, 0));
@@ -57,18 +64,43 @@ public class AccountLoginView{
         buttonPanel.add(backButton);
         buttonPanel.add(loginButton);
 
-        // feedback message labels
-        messageLabel = new JLabel("", SwingConstants.CENTER);
-        messageLabel.setForeground(Color.RED);
-        messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         southPanel = new JPanel();
         southPanel.setLayout(new BoxLayout(southPanel, BoxLayout.Y_AXIS));
         southPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         southPanel.add(buttonPanel);
-        southPanel.add(Box.createVerticalStrut(5)); // separation between button panel and the feedback message
-        southPanel.add(messageLabel);
 
         frame.add(southPanel, BorderLayout.SOUTH);
+        frame.setVisible(true);
+    }
+
+    public boolean validateInputs(){
+        String email = emailField.getText().trim();
+
+        if (!Pattern.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", email)) {
+            warningLabel.setText("Please enter a valid email address.");
+            return false;
+        }
+
+        return true;
+    }
+
+    public JButton getBackButton(){
+        return backButton;
+    }
+
+    public JButton getLoginButton(){
+        return loginButton;
+    }
+
+    public JFrame getFrame(){
+        return frame;
+    }
+
+    public String getEmail(){
+        return emailField.getText();
+    }
+
+    public String getPassword(){
+        return new String(passwordField.getPassword());
     }
 }

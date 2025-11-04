@@ -2,96 +2,102 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Designs the Customer Checkout Session Page of the Restaurant App.
+ * Customer Checkout Page Layout in line with its controller
  */
 public class CustomerCheckoutSessionView {
     private JFrame frame;
     private JPanel headerPanel, bodyPanel, footerPanel;
     private JButton logoutButton, settingsButton, placeOrderButton;
-    private JLabel logoLabel, summaryLabel, addressLabel, paymentLabel, totalLabel;
-    private JTextField addressField;
-    private JComboBox<String> paymentOptions;
+    private JLabel logoLabel, addressLabel, summaryLabel, productLabel, priceLabel, quantityLabel;
+    private JLabel totalPriceLabel, totalPrepLabel;
 
     /**
-     * Constructor for CustomerCheckoutSessionView class.
+     * Constructor for CustomerCheckoutSessionView class
      */
-    public CustomerCheckoutSessionView() {
-        // Frame setup
+    public CustomerCheckoutSessionView(){
         frame = new JFrame("Customer Checkout Page");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 400);
+        frame.setSize(1000, 400);
         frame.setLayout(new BorderLayout());
         frame.setLocationRelativeTo(null);
 
-        // Header panel
         headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        logoLabel = new JLabel("Logo of Incorporation");
+        JPanel leftHeader = new JPanel();
+        leftHeader.setLayout(new BoxLayout(leftHeader, BoxLayout.Y_AXIS));
+        leftHeader.setOpaque(false);
 
-        logoutButton = new JButton("Log out");
-        settingsButton = new JButton("Settings");
+        logoLabel = new JLabel("Logo of incorporation");
+        addressLabel = new JLabel("User Address");
+        leftHeader.add(logoLabel);
+        leftHeader.add(addressLabel);
 
-        JPanel rightHeaderPanel = new JPanel();
-        rightHeaderPanel.add(logoutButton);
-        rightHeaderPanel.add(settingsButton);
+        JPanel rightHeader = new JPanel();
+        rightHeader.setLayout(new BoxLayout(rightHeader, BoxLayout.Y_AXIS));
+        rightHeader.setOpaque(false);
+        logoutButton = new JButton("Log out button");
+        settingsButton = new JButton("Settings button");
+        rightHeader.add(logoutButton);
+        rightHeader.add(settingsButton);
 
-        headerPanel.add(logoLabel, BorderLayout.WEST);
-        headerPanel.add(rightHeaderPanel, BorderLayout.EAST);
+        headerPanel.add(leftHeader, BorderLayout.WEST);
+        headerPanel.add(rightHeader, BorderLayout.EAST);
         frame.add(headerPanel, BorderLayout.NORTH);
 
-        // Body panel
         bodyPanel = new JPanel();
         bodyPanel.setLayout(new BoxLayout(bodyPanel, BoxLayout.Y_AXIS));
-        bodyPanel.setBorder(BorderFactory.createEmptyBorder(30, 60, 30, 60));
+        bodyPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
 
-        // Summary of items label
         summaryLabel = new JLabel("Summary of Items");
-        summaryLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        summaryLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         summaryLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         bodyPanel.add(summaryLabel);
-        bodyPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        bodyPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Address section
-        addressLabel = new JLabel("Address:");
-        addressLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        addressField = new JTextField();
-        addressField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        bodyPanel.add(addressLabel);
-        bodyPanel.add(addressField);
-        bodyPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        JPanel tableHeader = new JPanel(new GridLayout(1, 3));
+        productLabel = new JLabel("Product name");
+        priceLabel = new JLabel("Price");
+        quantityLabel = new JLabel("Quantity");
+        tableHeader.add(productLabel);
+        tableHeader.add(priceLabel);
+        tableHeader.add(quantityLabel);
 
-        // Payment options section
-        paymentLabel = new JLabel("Payment options:");
-        paymentLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        String[] paymentMethods = {"Cash on Delivery", "Credit Card", "Gcash", "PayPal"};
-        paymentOptions = new JComboBox<>(paymentMethods);
-        paymentOptions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        bodyPanel.add(paymentLabel);
-        bodyPanel.add(paymentOptions);
-        bodyPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+        bodyPanel.add(tableHeader);
+        bodyPanel.add(Box.createRigidArea(new Dimension(0, 100)));
 
         frame.add(bodyPanel, BorderLayout.CENTER);
 
-        // Footer panel (Total + Place order button)
         footerPanel = new JPanel(new BorderLayout());
         footerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        totalLabel = new JLabel("Total: ₱0.00");
-        totalLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        JPanel leftFooter = new JPanel();
+        leftFooter.setLayout(new BoxLayout(leftFooter, BoxLayout.Y_AXIS));
+        leftFooter.setOpaque(false);
+
+        totalPriceLabel = new JLabel("Total Price");
+        totalPrepLabel = new JLabel("Total Prep Time:");
+        leftFooter.add(totalPriceLabel);
+        leftFooter.add(totalPrepLabel);
 
         placeOrderButton = new JButton("Place Order");
 
-        footerPanel.add(totalLabel, BorderLayout.WEST);
+        footerPanel.add(leftFooter, BorderLayout.WEST);
         footerPanel.add(placeOrderButton, BorderLayout.EAST);
         frame.add(footerPanel, BorderLayout.SOUTH);
 
-        // Display frame
         frame.setVisible(true);
     }
 
-    // Main method to test UI
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(CustomerCheckoutSessionView::new);
+    public JButton getLogoutButton(){
+        return logoutButton;
+    }
+
+    public JButton getSettingsButton(){
+        return settingsButton;
+    }
+
+    public JButton getPlaceOrderButton(){
+        return placeOrderButton;
     }
 }

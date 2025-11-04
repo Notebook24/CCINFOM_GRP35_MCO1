@@ -4,26 +4,24 @@ import java.awt.*;
 /**
  * Designs the Admin Add/Delete Products Page.
  */
-public class AdminAddDeleteProductsView {
+public class AdminAddProductView {
     private JFrame frame;
     private JPanel headerPanel, formPanel, footerPanel;
-    private JButton logoutButton, settingsButton, addAmountButton, deleteAmountButton;
+    private JButton logoutButton, settingsButton, addProductButton, backButton;
     private JTextField nameField, priceField, prepTimeField;
     private JTextArea descriptionArea;
-    private JLabel logoLabel;
+    private JLabel logoLabel, warningLabel;
 
     /**
-     * Constructor for AdminAddDeleteProductsView class.
+     * Constructor for AdminAddProductsView class.
      */
-    public AdminAddDeleteProductsView() {
-        // Frame setup
-        frame = new JFrame("Admin - Add/Delete Products");
+    public AdminAddProductView(){
+        frame = new JFrame("Add Products");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(600, 400);
         frame.setLayout(new BorderLayout());
         frame.setLocationRelativeTo(null);
 
-        // Header panel (logo + right buttons)
         headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
@@ -39,12 +37,16 @@ public class AdminAddDeleteProductsView {
         headerPanel.add(rightHeaderPanel, BorderLayout.EAST);
         frame.add(headerPanel, BorderLayout.NORTH);
 
-        // Form panel (center)
         formPanel = new JPanel();
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
         formPanel.setBorder(BorderFactory.createEmptyBorder(30, 60, 30, 60));
 
-        // Name row
+        warningLabel = new JLabel("", SwingConstants.CENTER);
+        warningLabel.setForeground(Color.RED);
+        warningLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        formPanel.add(warningLabel);
+
         JPanel namePanel = new JPanel(new BorderLayout(10, 0));
         JLabel nameLabel = new JLabel("Name:");
         nameField = new JTextField();
@@ -53,7 +55,6 @@ public class AdminAddDeleteProductsView {
         formPanel.add(namePanel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Price row
         JPanel pricePanel = new JPanel(new BorderLayout(10, 0));
         JLabel priceLabel = new JLabel("Price:");
         priceField = new JTextField();
@@ -62,7 +63,6 @@ public class AdminAddDeleteProductsView {
         formPanel.add(pricePanel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Description row
         JPanel descPanel = new JPanel(new BorderLayout(10, 0));
         JLabel descLabel = new JLabel("Description:");
         descriptionArea = new JTextArea(3, 20);
@@ -74,9 +74,8 @@ public class AdminAddDeleteProductsView {
         formPanel.add(descPanel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Prep Time row
         JPanel prepPanel = new JPanel(new BorderLayout(10, 0));
-        JLabel prepLabel = new JLabel("Prep Time:");
+        JLabel prepLabel = new JLabel("Prep Time (HH:MM:SS):");
         prepTimeField = new JTextField();
         prepPanel.add(prepLabel, BorderLayout.WEST);
         prepPanel.add(prepTimeField, BorderLayout.CENTER);
@@ -84,24 +83,80 @@ public class AdminAddDeleteProductsView {
 
         frame.add(formPanel, BorderLayout.CENTER);
 
-        // Footer panel (Add/Delete buttons)
         footerPanel = new JPanel(new BorderLayout());
         footerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        addAmountButton = new JButton("Add amount");
-        deleteAmountButton = new JButton("Delete amount");
+        addProductButton = new JButton("Add Product");
+        backButton = new JButton("Back");
 
-        footerPanel.add(addAmountButton, BorderLayout.WEST);
-        footerPanel.add(deleteAmountButton, BorderLayout.EAST);
+        footerPanel.add(addProductButton, BorderLayout.WEST);
+        footerPanel.add(backButton, BorderLayout.EAST);
 
         frame.add(footerPanel, BorderLayout.SOUTH);
 
-        // Display frame
         frame.setVisible(true);
     }
 
-    // Main method to test the UI
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(AdminAddDeleteProductsView::new);
+    public boolean validateInputs(){
+        if (getProductName().trim().isEmpty() ||
+            getDescription().trim().isEmpty() ||
+            getPrice().trim().isEmpty() ||
+            getPrepTime().trim().isEmpty()){
+
+            warningLabel.setText("Please fill in all fields before adding a product.");
+            return false;
+        }
+
+        if (!priceField.getText().matches("\\d+(\\.\\d{1,2})?")) {
+            warningLabel.setText("Price must be a valid number (ex: 99.99).");
+            return false;
+        }
+
+        if (!prepTimeField.getText().matches("^\\d{2}:\\d{2}:\\d{2}$")) {
+            warningLabel.setText("Preparation time must be in HH:MM:SS format (ex: 00:15:00).");
+            return false;
+        }
+        warningLabel.setText("");
+        return true;
+    }
+
+    public JFrame getFrame(){
+        return frame;
+    }
+
+    public JButton getLogoutButton(){
+        return logoutButton;
+    }
+
+    public JButton getSettingsButton(){
+        return settingsButton;
+    }
+
+    public JButton getAddProductButton(){
+        return addProductButton;
+    }
+
+    public JButton getBackButton(){
+        return backButton;
+    }
+
+    public String getProductName(){
+        return nameField.getText();
+    }
+
+    public String getDescription(){
+        return descriptionArea.getText();
+    }
+
+    public String getPrice(){
+        return priceField.getText();
+    }
+
+    public String getPrepTime(){
+        return prepTimeField.getText();
+    }
+
+    public JLabel getWarningLabel(){
+        return warningLabel;
     }
 }

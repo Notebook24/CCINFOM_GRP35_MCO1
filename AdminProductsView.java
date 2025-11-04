@@ -57,7 +57,6 @@ public class AdminProductsView {
             btn.setFocusPainted(false);
         }
 
-        // Add buttons to body
         bodyPanel.add(product1Button);
         bodyPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         bodyPanel.add(product2Button);
@@ -68,11 +67,9 @@ public class AdminProductsView {
 
         frame.add(bodyPanel, BorderLayout.CENTER);
 
-        // Make frame visible
         frame.setVisible(true);
     }
 
-    // Main method for testing
     public static void main(String[] args) {
         SwingUtilities.invokeLater(AdminProductsView::new);
     }

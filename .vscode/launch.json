@@ -1,0 +1,178 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "AdminAddDeleteProductsView",
+            "request": "launch",
+            "mainClass": "AdminAddDeleteProductsView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "AdminCustomerEngagementView",
+            "request": "launch",
+            "mainClass": "AdminCustomerEngagementView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "AdminHomePageView",
+            "request": "launch",
+            "mainClass": "AdminHomePageView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "AdminMenuStatusView",
+            "request": "launch",
+            "mainClass": "AdminMenuStatusView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "AdminOrderStatusView",
+            "request": "launch",
+            "mainClass": "AdminOrderStatusView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "AdminProductsView",
+            "request": "launch",
+            "mainClass": "AdminProductsView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "AdminRevenueView",
+            "request": "launch",
+            "mainClass": "AdminRevenueView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "AdminSettingsView",
+            "request": "launch",
+            "mainClass": "AdminSettingsView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "AppDriver",
+            "request": "launch",
+            "mainClass": "AppDriver",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "CustomerCartPageView",
+            "request": "launch",
+            "mainClass": "CustomerCartPageView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "CustomerCheckoutSessionView",
+            "request": "launch",
+            "mainClass": "CustomerCheckoutSessionView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "CustomerDeliveryTrackerView",
+            "request": "launch",
+            "mainClass": "CustomerDeliveryTrackerView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "CustomerHomePageView",
+            "request": "launch",
+            "mainClass": "CustomerHomePageView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "CustomerMenuPageView",
+            "request": "launch",
+            "mainClass": "CustomerMenuPageView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "CustomerReceiptPageView",
+            "request": "launch",
+            "mainClass": "CustomerReceiptPageView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "CustomerSettingsView",
+            "request": "launch",
+            "mainClass": "CustomerSettingsView",
+            "classPaths": [
+                "${workspaceFolder}/mysql-connector-j-9.5.0.jar",
+                "${workspaceFolder}"
+            ]
+        }
+    ]
+}
