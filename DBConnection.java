@@ -6,15 +6,15 @@ public class DBConnection{
     /**
      * Link to the database, tells the Java file to use JDBC.
      */
-    private static final String URL = "jdbc:mysql://localhost:3306/GRP35_db";
+    private static final String URL = "jdbc:mysql://localhost:3306/GRP35_db"; //Stay the same (since lahat naman ng MySQL default 3306 ung localhost)
     /**
      * Name of the user of the SQL account.
      */ 
-    private static final String USER = "root";
+    private static final String USER = "root"; //Papalit ung username sa username ny MySQL mo
     /**
      * Password of the SQL account.
      */
-    private static final String PASSWORD = "Choichoi22";
+    private static final String PASSWORD = "Choichoi22"; //Papalit ung password sa password ng MySQL mo
 
     /**
      * Creates a connection between the Java applictaion and the database.

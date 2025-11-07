@@ -30,7 +30,7 @@ public class CustomerHomePageView {
         logoLabel.setFont(new Font("Arial", Font.BOLD, 14));
         logoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        goToCartButton = new JButton("Go To Cart");
+        goToCartButton = new JButton("Go To Menu");
         goToCartButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         leftHeaderPanel.add(logoLabel);
@@ -74,7 +74,6 @@ public class CustomerHomePageView {
         frame.setVisible(true);
     }
 
-    // --- Getters ---
     public JFrame getFrame() {
         return frame;
     }

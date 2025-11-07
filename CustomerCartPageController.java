@@ -6,25 +6,89 @@ import java.util.*;
 public class CustomerCartPageController {
     private CustomerCartPageView view;
     private int customerId;
+    private Map<Integer, Integer> cartMap;
     private List<MenuProduct> products;
     private Connection conn;
-    private Map<Integer, Integer> cartMap;
 
-    public CustomerCartPageController(CustomerCartPageView view, int id){
+    //Ang map is nimamatch nya ung menu Id sa quantity ng menu na pinili ng user using key avlue pairs
+    //Ung mga inadd lang ni user sa cart ung nasa loob ng map
+    //Sample: User added to cart 2 spaggetti (menu_id = 1), 1 bear brand (menu_id = 2)
+
+    //Map<Integer, Integer> = {1 : 2, 2 : 1}
+    //Pinapasa to sa cart controller and vice versa para maretain ung mga iandd to cart ni suer pag bumalik sa menu
+
+    public CustomerCartPageController(CustomerCartPageView view, int customerId, Map<Integer, Integer> cartMap) {
         this.view = view;
-        customerId = id;
-        this.cartMap = new HashMap<>();
-        loadAvailableProducts();
+        this.customerId = customerId;
+        this.cartMap = cartMap;
+        this.products = new ArrayList<>();
+
+        loadCartProducts();
+
+        view.getLogoutButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                view.getFrame().dispose();
+
+                LandingPageView landingPageView = new LandingPageView();
+                new LandingPageController(landingPageView);
+            }
+        });
+
+        view.getSettingsButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                view.getFrame().dispose();
+
+                CustomerSettingsView settingsView = new CustomerSettingsView();
+                new CustomerSettingsController(settingsView, customerId);
+            }
+        });
+
+        view.getReturnButton().addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                view.getFrame().dispose();
+
+                CustomerMenuPageView menuView = new CustomerMenuPageView();
+                new CustomerMenuPageController(menuView, customerId, cartMap);
+            }
+        });
+
+        view.getCheckOutButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                view.getFrame().dispose();
+
+                CustomerCheckoutSessionView menuView = new CustomerCheckoutSessionView();
+                //Tatawagin ung CustomerCheckoutSessionview para mareflect ung screen
+
+                //new CustomerCheckoutSessionController(menuView, customerId);
+                //Dapat ganyan parameters ng checkout session controller constructor, pacomplete nalang sa CustomerCheckoutController since sya ung logic
+                //need kasi unf customerId sa paggawa ng orders and order lines
+            }
+        });
     }
 
-    private void loadAvailableProducts(){
-        products = new ArrayList<>();
-        try{
-            conn = DBConnection.getConnection();
-            String sql = "SELECT * FROM Menus WHERE is_available = 1";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery();
+    private void loadCartProducts(){
+        if (cartMap.isEmpty()){
+            JOptionPane.showMessageDialog(null, "Your cart is empty!");
+            return;
+        }
 
+        try{
+            conn = DBConnection.getConnection();  //tatawgin DB app para maassign ung connection from app to MySQL to avriable conn
+
+            String sql = "SELECT * FROM Menus WHERE menu_id IN (" +
+                         String.join(",", Collections.nCopies(cartMap.size(), "?")) + ")";  //SQL statement, ung ? is the value to be passed
+            PreparedStatement ps = conn.prepareStatement(sql);  //MySQL reads statement and returns the actual statement (the one w/o the ?)
+
+            int index = 1;
+            for (Integer id : cartMap.keySet()){
+                ps.setInt(index++, id);
+            }
+
+            ResultSet rs = ps.executeQuery();  //Execute ung statement
             while (rs.next()){
                 products.add(new MenuProduct(
                     rs.getInt("menu_id"),
@@ -36,95 +100,13 @@ public class CustomerCartPageController {
                 ));
             }
 
-            view.displayProducts(products);
-            attachListeners();
-
+            view.displayCartItems(products, cartMap);
+            updateTotals();
         } 
         catch (SQLException e){
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error loading menu: " + e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error loading cart items: " + e.getMessage());
         }
-    }
-
-    private void attachListeners(){
-        List<JButton> cartButtons = view.getCartButtons();
-        List<JButton> plusButtons = view.getPlusButtons();
-        List<JButton> minusButtons = view.getMinusButtons();
-        List<JLabel> quantityLabels = view.getQuantityLabels();
-
-        for (int i = 0; i < products.size(); i++) {
-            MenuProduct product = products.get(i);
-            JButton cartBtn = cartButtons.get(i);
-            JButton plusBtn = plusButtons.get(i);
-            JButton minusBtn = minusButtons.get(i);
-            JLabel qtyLabel = quantityLabels.get(i);
-
-            cartBtn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e){
-                    if (cartMap.containsKey(product.getId())){
-                        cartMap.remove(product.getId());
-                        cartBtn.setText("Add to Cart");
-                        qtyLabel.setText("0");
-                        plusBtn.setEnabled(false);
-                        minusBtn.setEnabled(false);
-                    } 
-                    else {
-                        cartMap.put(product.getId(), 1);
-                        cartBtn.setText("Remove from Cart");
-                        qtyLabel.setText("1");
-                        plusBtn.setEnabled(true);
-                        minusBtn.setEnabled(true);
-                    }
-                    updateTotals();
-                }
-            });
-
-            plusBtn.addActionListener(new ActionListener(){
-                @Override
-                public void actionPerformed(ActionEvent e){
-                    if (cartMap.containsKey(product.getId())){
-                        int qty = Integer.parseInt(qtyLabel.getText());
-                        qty++;
-                        qtyLabel.setText(String.valueOf(qty));
-                        cartMap.put(product.getId(), qty);
-                        updateTotals();
-                    }
-                }
-            });
-
-            minusBtn.addActionListener(new ActionListener(){
-                @Override
-                public void actionPerformed(ActionEvent e){
-                    if (cartMap.containsKey(product.getId())){
-                        int qty = Integer.parseInt(qtyLabel.getText());
-                        if (qty > 1){
-                            qty--;
-                            qtyLabel.setText(String.valueOf(qty));
-                            cartMap.put(product.getId(), qty);
-                        } 
-                        else {
-                            cartMap.remove(product.getId());
-                            cartBtn.setText("Add to Cart");
-                            qtyLabel.setText("0");
-                            plusBtn.setEnabled(false);
-                            minusBtn.setEnabled(false);
-                        }
-                        updateTotals();
-                    }
-                }
-            });
-        }
-
-        view.getCheckoutButton().addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e){
-                view.getFrame().dispose();
-
-                CustomerCheckoutSessionView checkoutSessionView = new CustomerCheckoutSessionView();
-                //new CustomerCheckoutSessionController(view, customerId);
-            }
-        });
     }
 
     private void updateTotals(){
@@ -136,8 +118,7 @@ public class CustomerCartPageController {
                 int qty = cartMap.get(product.getId());
                 totalCost += product.getPrice() * qty;
 
-                String time = product.getPrepTime();
-                String[] parts = time.split(":");
+                String[] parts = product.getPrepTime().split(":");
                 int h = Integer.parseInt(parts[0]);
                 int m = Integer.parseInt(parts[1]);
                 int s = Integer.parseInt(parts[2]);
@@ -150,7 +131,7 @@ public class CustomerCartPageController {
         int s = totalSeconds % 60;
         String formatted = String.format("%02d:%02d:%02d", h, m, s);
 
-        view.getTotalCostLabel().setText("Total Cost: ₱" + String.format("%.2f", totalCost));
-        view.getPrepTimeLabel().setText("Prep Time: " + formatted);
+        view.getTotalCostLabel().setText("Total Price: ₱" + String.format("%.2f", totalCost));
+        view.getTotalPrepTimeLabel().setText("Total Prep Time: " + formatted);
     }
 }

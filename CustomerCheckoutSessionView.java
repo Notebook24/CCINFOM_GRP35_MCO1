@@ -1,6 +1,24 @@
 import javax.swing.*;
 import java.awt.*;
 
+//NOTE, THIS STILL NEEDS MODIFICATIONS
+//Pag pinindot ung place order button, magagawa na ung order and order lines sa controller
+//INSERT command gagamitin
+
+/*
+ * Ex:
+ * 
+ * String sql = "INSERT INTO Customers (last_name, first_name, email, password, address) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)){
+            
+            pstmt.setString(1, lastName);  (First question mark in statement is equal to lastname)
+            pstmt.setString(2, firstName);
+            pstmt.setString(3, email);
+            pstmt.setString(4, password);
+            pstmt.setString(5, address);
+ */
+
 /**
  * Customer Checkout Page Layout in line with its controller
  */

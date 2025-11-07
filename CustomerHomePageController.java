@@ -35,9 +35,9 @@ public class CustomerHomePageController {
             public void actionPerformed(ActionEvent e){
                 customerHomePageView.getFrame().dispose();
 
-                CustomerCartPageView cartPage = new CustomerCartPageView();
+                CustomerMenuPageView cartPage = new CustomerMenuPageView();
 
-                new CustomerCartPageController(cartPage, customerId);
+                new CustomerMenuPageController(cartPage, customerId);
             }
         });
     }
