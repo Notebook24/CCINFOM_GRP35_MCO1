@@ -6,9 +6,9 @@ import java.awt.*;
  */
 public class CustomerHomePageView {
     private JFrame frame;
-    private JPanel headerPanel, bodyPanel, footerPanel;
-    private JButton logoutButton, settingsButton, goToCartButton;
-    private JLabel logoLabel, homeTitleLabel, samplePhotosLabel, footerLabel;
+    private JPanel headerPanel, logoPanel, navPanel, bodyPanel, footerPanel;
+    private JButton logoutButton, paymentsButton, ordersButton, profileButton, viewMenuButton;
+    private JLabel logoLabel, taglineLabel, subtextLabel, foodIconsLabel, footerLabel;
 
     /**
      * Constructor for CustomerHomePageView class.
@@ -16,64 +16,113 @@ public class CustomerHomePageView {
     public CustomerHomePageView() {
         frame = new JFrame("Customer Home Page");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(700, 500);
+        frame.setSize(1920, 1080);
         frame.setLayout(new BorderLayout());
         frame.setLocationRelativeTo(null);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
+        // ================= HEADER ==================
         headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(30, 100, 20, 100));
+        headerPanel.setBackground(Color.WHITE);
 
-        JPanel leftHeaderPanel = new JPanel();
-        leftHeaderPanel.setLayout(new BoxLayout(leftHeaderPanel, BoxLayout.Y_AXIS));
+        // Left: Logo
+        logoPanel = new JPanel();
+        logoPanel.setBackground(Color.WHITE);
 
-        logoLabel = new JLabel("Logo and Restaurant Name");
-        logoLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        logoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Load and resize logo image safely
+        ImageIcon rawLogo = new ImageIcon("design_images/koreanexpress-logo.png");
+        Image scaledLogo = rawLogo.getImage().getScaledInstance(300, 90, Image.SCALE_SMOOTH);
+        ImageIcon logoIcon = new ImageIcon(scaledLogo);
 
-        goToCartButton = new JButton("Go To Menu");
-        goToCartButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        logoLabel = new JLabel(logoIcon);
+        logoPanel.add(logoLabel);
 
-        leftHeaderPanel.add(logoLabel);
-        leftHeaderPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        leftHeaderPanel.add(goToCartButton);
+        // Right: Navigation buttons
+        navPanel = new JPanel();
+        navPanel.setBackground(Color.WHITE);
+        navPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 50, 20));
 
-        JPanel rightHeaderPanel = new JPanel();
-        logoutButton = new JButton("Log out");
-        settingsButton = new JButton("Settings");
-        rightHeaderPanel.add(logoutButton);
-        rightHeaderPanel.add(settingsButton);
+        paymentsButton = new JButton("Payments");
+        ordersButton = new JButton("Orders");
+        profileButton = new JButton("Profile");
+        logoutButton = new JButton("Log Out");
 
-        headerPanel.add(leftHeaderPanel, BorderLayout.WEST);
-        headerPanel.add(rightHeaderPanel, BorderLayout.EAST);
+        Font navFont = new Font("SansSerif", Font.BOLD, 20);
+        Color navColor = new Color(230, 0, 0);
+
+        JButton[] navButtons = {paymentsButton, ordersButton, profileButton, logoutButton};
+        for (JButton b : navButtons) {
+            b.setFont(navFont);
+            b.setForeground(navColor);
+            b.setFocusPainted(false);
+            b.setContentAreaFilled(false);
+            b.setBorderPainted(false);
+        }
+
+        navPanel.add(paymentsButton);
+        navPanel.add(ordersButton);
+        navPanel.add(profileButton);
+        navPanel.add(logoutButton);
+
+        headerPanel.add(logoPanel, BorderLayout.WEST);
+        headerPanel.add(navPanel, BorderLayout.EAST);
 
         frame.add(headerPanel, BorderLayout.NORTH);
 
+        // ================= BODY ==================
         bodyPanel = new JPanel();
         bodyPanel.setLayout(new BoxLayout(bodyPanel, BoxLayout.Y_AXIS));
-        bodyPanel.setBorder(BorderFactory.createEmptyBorder(40, 0, 40, 0));
+        bodyPanel.setBackground(Color.WHITE);
 
-        homeTitleLabel = new JLabel("HOME PAGE", SwingConstants.CENTER);
-        homeTitleLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        homeTitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        bodyPanel.add(Box.createVerticalStrut(100));
 
-        samplePhotosLabel = new JLabel("Sample Food Photos", SwingConstants.CENTER);
-        samplePhotosLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        samplePhotosLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        ImageIcon foodIcons = new ImageIcon("design_images/foodicons.png");
+        foodIconsLabel = new JLabel(foodIcons);
+        foodIconsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        bodyPanel.add(homeTitleLabel);
-        bodyPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-        bodyPanel.add(samplePhotosLabel);
+        taglineLabel = new JLabel("Your Fast Lane to Korean Cuisine.");
+        taglineLabel.setFont(new Font("Helvetica Nueue", Font.BOLD | Font.ITALIC, 32));
+        taglineLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        subtextLabel = new JLabel("DLSU - Manila’s newest pioneer of Korean cloud kitchen.");
+        subtextLabel.setFont(new Font("Helvetica Neue", Font.PLAIN, 20));
+        subtextLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        bodyPanel.add(foodIconsLabel);
+        bodyPanel.add(Box.createVerticalStrut(40));
+        bodyPanel.add(taglineLabel);
+        bodyPanel.add(Box.createVerticalStrut(10));
+        bodyPanel.add(subtextLabel);
+        bodyPanel.add(Box.createVerticalStrut(30));
+
+        // View Menu Button
+        viewMenuButton = new JButton("View Menus");
+        viewMenuButton.setFont(new Font("Helvetica Neue", Font.BOLD, 22));
+        viewMenuButton.setForeground(Color.BLACK);
+        viewMenuButton.setBackground(new Color(255, 182, 182));
+        viewMenuButton.setFocusPainted(false);
+        viewMenuButton.setBorder(BorderFactory.createEmptyBorder(15, 50, 15, 50));
+        viewMenuButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        bodyPanel.add(viewMenuButton);
+        bodyPanel.add(Box.createVerticalStrut(70));
 
         frame.add(bodyPanel, BorderLayout.CENTER);
 
+        // ================= FOOTER ==================
         footerPanel = new JPanel();
-        footerLabel = new JLabel("© 2025 My Restaurant App");
+        footerPanel.setBackground(Color.WHITE);
+        footerLabel = new JLabel("2025 © Korean Express Inc.  All Rights Reserved.");
+        footerLabel.setFont(new Font("Helvetica Neue", Font.BOLD, 14));
         footerPanel.add(footerLabel);
+
         frame.add(footerPanel, BorderLayout.SOUTH);
 
         frame.setVisible(true);
     }
 
+    // ================= GETTERS ==================
     public JFrame getFrame() {
         return frame;
     }
@@ -82,11 +131,19 @@ public class CustomerHomePageView {
         return logoutButton;
     }
 
-    public JButton getSettingsButton() {
-        return settingsButton;
+    public JButton getPaymentsButton() {
+        return paymentsButton;
     }
 
-    public JButton getGoToCartButton() {
-        return goToCartButton;
+    public JButton getOrdersButton() {
+        return ordersButton;
+    }
+
+    public JButton getProfileButton() {
+        return profileButton;
+    }
+
+    public JButton getViewMenuButton() {
+        return viewMenuButton;
     }
 }

@@ -21,24 +21,31 @@ public class AdminAddProductController {
                 String desc = addProductView.getDescription().trim();
                 String priceText = addProductView.getPrice().trim();
                 String prepTime = addProductView.getPrepTime().trim();
+                String imagePath = addProductView.getSavedImagePath();
 
-                String sql = "INSERT INTO Menus (menu_name, menu_description, unit_price, preparation_time) VALUES (?, ?, ?, ?)";
+                String sql = "INSERT INTO Menus (menu_name, menu_description, unit_price, preparation_time, `image`) VALUES (?, ?, ?, ?, ?)";
 
-                try (Connection conn = DBConnection.getConnection()){                    
-                     PreparedStatement pstmt = conn.prepareStatement(sql);
+                try (Connection conn = DBConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement(sql)){
 
                     pstmt.setString(1, name);
                     pstmt.setString(2, desc);
                     pstmt.setBigDecimal(3, new java.math.BigDecimal(priceText));
                     pstmt.setTime(4, java.sql.Time.valueOf(prepTime));
+                    pstmt.setString(5, imagePath != null ? imagePath : "");
 
+                    System.out.println("Executing insert...");
                     int rowsInserted = pstmt.executeUpdate();
+                    System.out.println("Rows inserted: " + rowsInserted);
 
                     if (rowsInserted > 0){
                         JOptionPane.showMessageDialog(addProductView.getFrame(),
                                              "Product added successfully!",
                                                "Success",
                                                      JOptionPane.INFORMATION_MESSAGE);
+
+                        // Empty the form fields after successful addition
+                        addProductView.clearForm();
                     } 
                     else{
                         JOptionPane.showMessageDialog(addProductView.getFrame(),

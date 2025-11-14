@@ -6,7 +6,7 @@ public class DBConnection{
     /**
      * Link to the database, tells the Java file to use JDBC.
      */
-    private static final String URL = "jdbc:mysql://localhost:3306/GRP35_db"; //Stay the same (since lahat naman ng MySQL default 3306 ung localhost)
+    private static final String URL = "jdbc:mysql://localhost:3306/S20_GROUP3_DB?connectionTimeZone=UTC&serverTimezone=UTC"; //Stay the same (since lahat naman ng MySQL default 3306 ung localhost)
     /**
      * Name of the user of the SQL account.
      */ 
@@ -14,16 +14,17 @@ public class DBConnection{
     /**
      * Password of the SQL account.
      */
-    private static final String PASSWORD = "Choichoi22"; //Papalit ung password sa password ng MySQL mo
+    private static final String PASSWORD = ""; //Papalit ung password sa password ng MySQL mo
 
     /**
      * Creates a connection between the Java applictaion and the database.
      * 
      * @return conn: A variable which holds the connection between the Java application and the database.
      */
-    public static Connection getConnection() throws SQLException{
+   public static Connection getConnection() throws SQLException{
         try{
             Class.forName("com.mysql.cj.jdbc.Driver");
+            System.out.println("Connected to database!");
         }
         catch (ClassNotFoundException e){
             System.out.println("MySQL Driver not found!");

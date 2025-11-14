@@ -2,7 +2,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class LandingPageController {
-    public LandingPageView landingPageView;
+    private LandingPageView landingPageView;
 
     public LandingPageController(LandingPageView view){
         landingPageView = view;

@@ -38,55 +38,98 @@ public class CustomerSignUpController {
         });
     }
 
-    public int saveAccount(){
+    public int saveAccount() {
         String firstName = accountSignUpView.getFirstName().trim();
         String lastName = accountSignUpView.getLastName().trim();
         String email = accountSignUpView.getEmail().trim();
         String password = accountSignUpView.getPassword().trim();
         String address = accountSignUpView.getAddress().trim();
 
-        String sql = "INSERT INTO Customers (last_name, first_name, email, password, address) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)){
-            
-            pstmt.setString(1, lastName);
-            pstmt.setString(2, firstName);
-            pstmt.setString(3, email);
-            pstmt.setString(4, password);
-            pstmt.setString(5, address);
+        // extract city from address
+        String city = null;
+        String[] addressParts = address.split(",");
+        if (addressParts.length >= 2) {
+            city = addressParts[addressParts.length - 1].trim();
+            // Remove "City" in ANY case format
+            city = city.replaceAll("(?i)\\s*city$", "").trim();
+        }
 
-            int rowsInserted = pstmt.executeUpdate();
-            if (rowsInserted > 0){
-                try (ResultSet rs = pstmt.getGeneratedKeys()){
-                    if (rs.next()){
-                        int customerId = rs.getInt(1);
-                        JOptionPane.showMessageDialog(accountSignUpView.getFrame(),
-                                             "Account successfully created!",
-                                               "Success",
-                                                      JOptionPane.INFORMATION_MESSAGE);
-                        return customerId;
+        String sql = "INSERT INTO Customers (last_name, first_name, email, password, address, city_id) VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DBConnection.getConnection()) {
+
+            // fetch city_id
+            Integer cityId = null;
+
+            if (city != null && !city.isEmpty()) {
+                String cityQuery = "SELECT city_id FROM Cities WHERE city_name LIKE ?";
+                try (PreparedStatement cityStmt = conn.prepareStatement(cityQuery)) {
+                    cityStmt.setString(1, "%" + city + "%");
+
+                    try (ResultSet rs = cityStmt.executeQuery()) {
+                        if (rs.next()) {
+                            cityId = rs.getInt("city_id");
+                        }
                     }
                 }
             }
-        } 
-        catch (SQLException ex){
-            if (ex.getMessage().contains("Duplicate entry")){
-                JOptionPane.showMessageDialog(accountSignUpView.getFrame(),
-                        "Email is already registered.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            } 
-            else{
+
+            // 3. insert into Customers
+            try (PreparedStatement pstmt = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+
+                pstmt.setString(1, lastName);
+                pstmt.setString(2, firstName);
+                pstmt.setString(3, email);
+                pstmt.setString(4, password);
+                pstmt.setString(5, address);
+
+                if (cityId != null) {
+                    pstmt.setInt(6, cityId);
+                } else {
+                    pstmt.setNull(6, java.sql.Types.INTEGER);
+                }
+
+                int rowsInserted = pstmt.executeUpdate();
+                if (rowsInserted > 0) {
+                    try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                        if (rs.next()) {
+                            int customerId = rs.getInt(1);
+
+                            JOptionPane.showMessageDialog(
+                                accountSignUpView.getFrame(),
+                                "Account successfully created!",
+                                "Success",
+                                JOptionPane.INFORMATION_MESSAGE
+                            );
+
+                            return customerId;
+                        }
+                    }
+                }
+            }
+
+        } catch (SQLException ex) {
+            if (ex.getMessage().contains("Duplicate entry")) {
+                JOptionPane.showMessageDialog(
+                    accountSignUpView.getFrame(),
+                    "Email is already registered.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            } else {
                 ex.printStackTrace();
-                JOptionPane.showMessageDialog(accountSignUpView.getFrame(),
-                        "An error occurred while saving account.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(
+                    accountSignUpView.getFrame(),
+                    "An error occurred while saving account.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
             }
         }
+
         return -1;
     }
-
+    
     public void openHomePage(int customerId){
         accountSignUpView.getFrame().dispose();
 

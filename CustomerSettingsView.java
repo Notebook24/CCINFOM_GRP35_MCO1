@@ -1,6 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
 import java.util.regex.Pattern;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Designs the Settings page in line with its controller
@@ -13,11 +16,8 @@ public class CustomerSettingsView {
     private JTextField firstNameField, lastNameField, emailField, addressField;
     private JLabel logoLabel, warningLabel;
 
-    private final String[] validCities = {
-        "Caloocan", "Las Piñas", "Makati", "Malabon", "Mandaluyong", "Manila",
-        "Marikina", "Muntinlupa", "Navotas", "Parañaque", "Pasay", "Pasig",
-        "Quezon City", "San Juan", "Taguig", "Valenzuela"
-    };
+    // populated from DB at runtime
+    private List<String> validCities = new ArrayList<>();
 
     /**
      * Constructor for seeting controller class.
@@ -73,6 +73,10 @@ public class CustomerSettingsView {
         formPanel.add(buttonsPanel);
 
         frame.add(formPanel, BorderLayout.CENTER);
+
+        // load cities from DB into validCities
+        loadCities();
+
         frame.setVisible(true);
     }
 
@@ -161,5 +165,23 @@ public class CustomerSettingsView {
 
     public JTextField getAddressField(){
         return addressField;
+    }
+
+    private void loadCities(){
+        validCities.clear();
+        String sql = "SELECT city_name FROM Cities ORDER BY city_name";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()){
+                String city = rs.getString("city_name");
+                if (city != null && !city.trim().isEmpty()){
+                    validCities.add(city.trim());
+                }
+            }
+        } catch (SQLException ex){
+            // fallback: keep list empty (validation will still check address contents)
+            System.err.println("Warning: unable to load cities from DB: " + ex.getMessage());
+        }
     }
 }

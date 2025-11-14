@@ -42,14 +42,16 @@ public class CustomerMenuPageController {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()){
-                products.add(new MenuProduct(
+                MenuProduct product = new MenuProduct(
                     rs.getInt("menu_id"),
                     rs.getString("menu_name"),
                     rs.getString("menu_description"),
                     rs.getDouble("unit_price"),
                     rs.getString("preparation_time"),
-                    rs.getBoolean("is_available")
-                ));
+                    rs.getBoolean("is_available"),
+                    rs.getString("image") != null ? rs.getString("image") : ""
+                );
+                products.add(product);
             }
 
             view.displayProducts(products, cartMap);
@@ -184,12 +186,50 @@ public class CustomerMenuPageController {
             }
         }
 
-        int h = totalSeconds / 3600;
-        int m = (totalSeconds % 3600) / 60;
-        int s = totalSeconds % 60;
-        String formatted = String.format("%02d:%02d:%02d", h, m, s);
+        
+    int h = totalSeconds / 3600;
+    int m = (totalSeconds % 3600) / 60;
+    int s = totalSeconds % 60;
 
-        view.getTotalCostLabel().setText("Total Cost: ₱" + String.format("%.2f", totalCost));
-        view.getPrepTimeLabel().setText("Prep Time: " + formatted);
+    StringBuilder formatted = new StringBuilder();
+
+    if (h > 0) 
+    {
+        formatted.append(h).append(" hr");
+        
+        if (h > 1) 
+            formatted.append("s");
+    }
+
+    if (m > 0) 
+    {
+        if (formatted.length() > 0) {
+            formatted.append(h > 0 && s == 0 ? " and " : ", ");
+        }
+            formatted.append(m).append(" min");
+            
+        if (m > 1) 
+            formatted.append("s");
+    }
+
+        
+    if (s > 0) 
+    {
+        if (formatted.length() > 0) {
+            formatted.append(" and ");
+        }
+            formatted.append(s).append(" sec");
+            
+        if (s > 1) 
+            formatted.append("s");
+        }
+
+        // handle the case where all are zero
+        if (formatted.length() == 0) {
+            formatted.append("0 secs");
+        }
+
+        view.getTotalCostLabel().setText("TOTAL COST: ₱" + String.format("%.2f", totalCost));
+        view.getPrepTimeLabel().setText("PREP TIME: " + formatted);
     }
 }

@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "LandingPageView",
+            "request": "launch",
+            "mainClass": "LandingPageView",
+            "projectName": "CCINFOM_GRP35_MCO1_b18a0390"
+        },
+        {
+            "type": "java",
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}",

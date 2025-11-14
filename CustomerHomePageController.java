@@ -14,29 +14,40 @@ public class CustomerHomePageController {
                 customerHomePageView.getFrame().dispose();
 
                 LandingPageView landingPageView = new LandingPageView();
-
                 new LandingPageController(landingPageView);
             }
         });
 
-        customerHomePageView.getSettingsButton().addActionListener(new ActionListener() {
+        customerHomePageView.getPaymentsButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                // Add action for payments button
+            }
+        });
+
+        customerHomePageView.getOrdersButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                // Add action for orders button
+            }
+        });
+
+        customerHomePageView.getProfileButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
                 customerHomePageView.getFrame().dispose();
 
                 CustomerSettingsView settingsView = new CustomerSettingsView();
-
                 new CustomerSettingsController(settingsView, customerId);
             }
         });
 
-        customerHomePageView.getGoToCartButton().addActionListener(new ActionListener() {
+        customerHomePageView.getViewMenuButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
                 customerHomePageView.getFrame().dispose();
 
                 CustomerMenuPageView cartPage = new CustomerMenuPageView();
-
                 new CustomerMenuPageController(cartPage, customerId);
             }
         });

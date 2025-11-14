@@ -1,16 +1,23 @@
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 /**
  * Designs the Admin Add/Delete Products Page.
  */
 public class AdminAddProductView {
-    private JFrame frame;
+   private JFrame frame;
     private JPanel headerPanel, formPanel, footerPanel;
-    private JButton logoutButton, settingsButton, addProductButton, backButton;
+    private JButton logoutButton, settingsButton, addProductButton, backButton, uploadImageButton;
     private JTextField nameField, priceField, prepTimeField;
     private JTextArea descriptionArea;
-    private JLabel logoLabel, warningLabel;
+    private JLabel logoLabel, warningLabel, imagePreviewLabel;
+    private String savedImagePath = "";
 
     /**
      * Constructor for AdminAddProductsView class.
@@ -83,6 +90,19 @@ public class AdminAddProductView {
 
         frame.add(formPanel, BorderLayout.CENTER);
 
+        JPanel imagePanel = new JPanel(new BorderLayout(10, 0));
+        JLabel imageLabel = new JLabel("Product Image:");
+        uploadImageButton = new JButton("Upload Image");
+        imagePreviewLabel = new JLabel();
+        imagePreviewLabel.setPreferredSize(new Dimension(150, 100));
+        imagePanel.add(imageLabel, BorderLayout.WEST);
+        imagePanel.add(uploadImageButton, BorderLayout.CENTER);
+        imagePanel.add(imagePreviewLabel, BorderLayout.EAST);
+        formPanel.add(imagePanel);
+
+        // Action for image upload
+        uploadImageButton.addActionListener(e -> chooseAndSaveImage());
+
         footerPanel = new JPanel(new BorderLayout());
         footerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
@@ -95,6 +115,41 @@ public class AdminAddProductView {
         frame.add(footerPanel, BorderLayout.SOUTH);
 
         frame.setVisible(true);
+    }
+
+    private void chooseAndSaveImage(){
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Select Product Image");
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+        int result = chooser.showOpenDialog(frame);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+
+            File selectedFile = chooser.getSelectedFile();
+
+            try {
+                File folder = new File("product_images");
+
+                if (!folder.exists()) {
+                    folder.mkdirs();
+                }
+
+                String fileName = selectedFile.getName();
+                Path destinationPath = Paths.get("product_images", fileName);
+                Files.copy(selectedFile.toPath(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
+
+                savedImagePath = "product_images/" + fileName;
+
+                ImageIcon icon = new ImageIcon(new ImageIcon(savedImagePath)
+                        .getImage().getScaledInstance(100, 80, Image.SCALE_SMOOTH));
+                imagePreviewLabel.setIcon(icon);
+
+                JOptionPane.showMessageDialog(frame, "Image uploaded successfully!");
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(frame, "Error uploading image: " + ex.getMessage());
+            }
+        }
     }
 
     public boolean validateInputs(){
@@ -158,5 +213,18 @@ public class AdminAddProductView {
 
     public JLabel getWarningLabel(){
         return warningLabel;
+    }
+
+    public String getSavedImagePath() {
+        return savedImagePath;
+    }
+
+    public void clearForm() {
+        nameField.setText("");
+        descriptionArea.setText("");
+        priceField.setText("");
+        prepTimeField.setText("");
+        imagePreviewLabel.setIcon(null);
+        savedImagePath = "";
     }
 }
