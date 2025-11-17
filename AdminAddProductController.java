@@ -44,8 +44,10 @@ public class AdminAddProductController {
                                                "Success",
                                                      JOptionPane.INFORMATION_MESSAGE);
 
-                        // Empty the form fields after successful addition
-                        addProductView.clearForm();
+                        // Navigate back to products view after successful addition
+                        addProductView.getFrame().dispose();
+                        AdminViewProductsView productsView = new AdminViewProductsView();
+                        new AdminViewProductsController(productsView, adminId);
                     } 
                     else{
                         JOptionPane.showMessageDialog(addProductView.getFrame(),
@@ -76,8 +78,8 @@ public class AdminAddProductController {
             public void actionPerformed(ActionEvent e){
                 addProductView.getFrame().dispose();
 
-                AdminHomePageView homeView = new AdminHomePageView();
-                new AdminHomePageController(homeView, adminId);
+                AdminViewProductsView productsView = new AdminViewProductsView();
+                new AdminViewProductsController(productsView, adminId);
             }
         });
     }

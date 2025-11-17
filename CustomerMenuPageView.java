@@ -9,6 +9,7 @@ public class CustomerMenuPageView {
     private JPanel headerPanel, cartPanel, footerPanel;
     private JButton logoutButton, settingsButton, checkoutButton;
     private JButton paymentsButton, ordersButton, profileButton;
+    private JButton homeButton;
     private JLabel logoLabel, totalCostLabel, prepTimeLabel;
 
     private List<JButton> cartButtons;
@@ -39,11 +40,12 @@ public class CustomerMenuPageView {
         logoLabel = new JLabel(logoIcon);
         logoPanel.add(logoLabel);
 
-        // Right: Navigation Bar (uniform across pages)
+        // Right: Navigation Bar
         JPanel navPanel = new JPanel();
         navPanel.setBackground(Color.WHITE);
         navPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 50, 20));
 
+        homeButton = new JButton("Home");
         paymentsButton = new JButton("Payments");
         ordersButton = new JButton("Orders");
         profileButton = new JButton("Profile");
@@ -52,7 +54,7 @@ public class CustomerMenuPageView {
         Font navFont = new Font("SansSerif", Font.BOLD, 20);
         Color navColor = new Color(230, 0, 0);
 
-        JButton[] navButtons = {paymentsButton, ordersButton, profileButton, logoutButton};
+        JButton[] navButtons = {homeButton, paymentsButton, ordersButton, profileButton, logoutButton};
         for (JButton b : navButtons) {
             b.setFont(navFont);
             b.setForeground(navColor);
@@ -61,6 +63,7 @@ public class CustomerMenuPageView {
             b.setBorderPainted(false);
         }
 
+        navPanel.add(homeButton);
         navPanel.add(paymentsButton);
         navPanel.add(ordersButton);
         navPanel.add(profileButton);
@@ -68,10 +71,9 @@ public class CustomerMenuPageView {
 
         headerPanel.add(logoPanel, BorderLayout.WEST);
         headerPanel.add(navPanel, BorderLayout.EAST);
-
         frame.add(headerPanel, BorderLayout.NORTH);
 
-        // cart panel
+        // Cart panel
         cartPanel = new JPanel();
         cartPanel.setLayout(new BoxLayout(cartPanel, BoxLayout.Y_AXIS));
         cartPanel.setBackground(Color.WHITE);
@@ -82,7 +84,7 @@ public class CustomerMenuPageView {
         scrollPane.setBorder(null);
         frame.add(scrollPane, BorderLayout.CENTER);
 
-        // footer panel
+        // Footer panel
         footerPanel = new JPanel(new BorderLayout());
         footerPanel.setBorder(BorderFactory.createEmptyBorder(20, 100, 20, 100));
         footerPanel.setBackground(Color.WHITE);
@@ -91,12 +93,13 @@ public class CustomerMenuPageView {
         totalCostLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         totalCostLabel.setForeground(new Color(230, 0, 0));
         totalCostLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 50));
+
         prepTimeLabel = new JLabel("TOTAL PREP TIME: ");
         prepTimeLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         prepTimeLabel.setForeground(new Color(230, 0, 0));
         prepTimeLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 50));
 
-        JPanel infoPanel = new JPanel(new GridLayout(2, 1));
+        JPanel infoPanel = new JPanel(new GridLayout(3, 1));
         infoPanel.setBackground(Color.WHITE);
         infoPanel.add(totalCostLabel);
         infoPanel.add(prepTimeLabel);
@@ -119,9 +122,60 @@ public class CustomerMenuPageView {
         frame.setVisible(true);
     }
 
-    /**
-     * Displays all products in a scrollable list with images and action buttons.
-     */
+    // Getter methods
+    public JFrame getFrame() {
+        return frame;
+    }
+
+    public List<JButton> getCartButtons() {
+        return cartButtons;
+    }
+
+    public List<JButton> getPlusButtons() {
+        return plusButtons;
+    }
+
+    public List<JButton> getMinusButtons() {
+        return minusButtons;
+    }
+
+    public List<JLabel> getQuantityLabels() {
+        return quantityLabels;
+    }
+
+    public JButton getHomeButton() {
+        return homeButton;
+    }
+
+    public JButton getCheckoutButton() {
+        return checkoutButton;
+    }
+
+    public JButton getLogoutButton() {
+        return logoutButton;
+    }
+
+    public JButton getProfileButton() {
+        return profileButton;
+    }
+
+    public JLabel getTotalCostLabel() {
+        return totalCostLabel;
+    }
+
+    public JLabel getPrepTimeLabel() {
+        return prepTimeLabel;
+    }
+
+    public JButton getPaymentsButton() {
+        return paymentsButton;
+    }
+
+    public JButton getOrdersButton() {
+        return ordersButton;
+    }
+
+
     public void displayProducts(List<MenuProduct> products, Map<Integer, Integer> cartMap){
         this.products = products;
         cartPanel.removeAll();
@@ -134,7 +188,6 @@ public class CustomerMenuPageView {
         for (int i = 0; i < products.size(); i++){
             MenuProduct product = products.get(i);
 
-            // Parent container for each product
             JPanel itemPanel = new JPanel(new BorderLayout(20, 10));
             itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.LIGHT_GRAY));
             itemPanel.setBackground(Color.WHITE);
@@ -196,7 +249,6 @@ public class CustomerMenuPageView {
             quantityPanel.add(quantityLabel);
             quantityPanel.add(plusButton);
 
-            // Enable cart state
             if (cartMap != null && cartMap.containsKey(product.getId())) {
                 int quantity = cartMap.get(product.getId());
                 cartButton.setText("Remove from Cart");
@@ -234,7 +286,7 @@ public class CustomerMenuPageView {
             JLabel quantityLabel = quantityLabels.get(productIndex);
             JButton plusButton = plusButtons.get(productIndex);
             JButton minusButton = minusButtons.get(productIndex);
-            
+
             if (isInCart){
                 cartButton.setText("Remove from Cart");
                 quantityLabel.setText(String.valueOf(quantity));
@@ -248,44 +300,5 @@ public class CustomerMenuPageView {
                 minusButton.setEnabled(false);
             }
         }
-    }
-
-    public JFrame getFrame(){ 
-        return frame; 
-    }
-
-    public List<JButton> getCartButtons(){ 
-        return cartButtons; 
-    }
-    public List<JButton> getPlusButtons(){ 
-        return plusButtons; 
-    }
-
-    public List<JButton> getMinusButtons(){ 
-        return minusButtons; 
-    }
-
-    public List<JLabel> getQuantityLabels(){   
-        return quantityLabels; 
-    }
-
-    public JButton getCheckoutButton(){    
-        return checkoutButton; 
-    }
-
-    public JButton getLogoutButton() { 
-        return logoutButton; 
-    }
-
-    public JButton getSettingsButton() { 
-        return settingsButton; 
-    }
-
-    public JLabel getTotalCostLabel(){ 
-        return totalCostLabel; 
-    }
-
-    public JLabel getPrepTimeLabel(){ 
-        return prepTimeLabel; 
     }
 }

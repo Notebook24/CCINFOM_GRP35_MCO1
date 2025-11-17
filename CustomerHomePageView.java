@@ -7,7 +7,7 @@ import java.awt.*;
 public class CustomerHomePageView {
     private JFrame frame;
     private JPanel headerPanel, logoPanel, navPanel, bodyPanel, footerPanel;
-    private JButton logoutButton, paymentsButton, ordersButton, profileButton, viewMenuButton;
+    public JButton homeButton, paymentsButton, ordersButton, profileButton, logoutButton, viewMenuButton;
     private JLabel logoLabel, taglineLabel, subtextLabel, foodIconsLabel, footerLabel;
 
     /**
@@ -27,10 +27,10 @@ public class CustomerHomePageView {
         headerPanel.setBackground(Color.WHITE);
 
         // Left: Logo
-        logoPanel = new JPanel();
+        logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         logoPanel.setBackground(Color.WHITE);
 
-        // Load and resize logo image safely
+        // Load and resize logo image safely - using original size
         ImageIcon rawLogo = new ImageIcon("design_images/koreanexpress-logo.png");
         Image scaledLogo = rawLogo.getImage().getScaledInstance(300, 90, Image.SCALE_SMOOTH);
         ImageIcon logoIcon = new ImageIcon(scaledLogo);
@@ -39,27 +39,16 @@ public class CustomerHomePageView {
         logoPanel.add(logoLabel);
 
         // Right: Navigation buttons
-        navPanel = new JPanel();
+        navPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 50, 20));
         navPanel.setBackground(Color.WHITE);
-        navPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 50, 20));
 
-        paymentsButton = new JButton("Payments");
-        ordersButton = new JButton("Orders");
-        profileButton = new JButton("Profile");
-        logoutButton = new JButton("Log Out");
+        homeButton = makeNavButton("Home");
+        paymentsButton = makeNavButton("Payments");
+        ordersButton = makeNavButton("Orders");
+        profileButton = makeNavButton("Profile");
+        logoutButton = makeNavButton("Log Out");
 
-        Font navFont = new Font("SansSerif", Font.BOLD, 20);
-        Color navColor = new Color(230, 0, 0);
-
-        JButton[] navButtons = {paymentsButton, ordersButton, profileButton, logoutButton};
-        for (JButton b : navButtons) {
-            b.setFont(navFont);
-            b.setForeground(navColor);
-            b.setFocusPainted(false);
-            b.setContentAreaFilled(false);
-            b.setBorderPainted(false);
-        }
-
+        navPanel.add(homeButton);
         navPanel.add(paymentsButton);
         navPanel.add(ordersButton);
         navPanel.add(profileButton);
@@ -77,15 +66,24 @@ public class CustomerHomePageView {
 
         bodyPanel.add(Box.createVerticalStrut(100));
 
+        // Food icons - using original image without compression
         ImageIcon foodIcons = new ImageIcon("design_images/foodicons.png");
-        foodIconsLabel = new JLabel(foodIcons);
+        if (foodIcons.getIconWidth() > 0) {
+            // Use original image size or appropriate scaling
+            foodIconsLabel = new JLabel(foodIcons);
+        } else {
+            foodIconsLabel = new JLabel("🍜 🍱 🍛");
+            foodIconsLabel.setFont(new Font("SansSerif", Font.PLAIN, 60));
+        }
         foodIconsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        // Tagline - original font and size
         taglineLabel = new JLabel("Your Fast Lane to Korean Cuisine.");
-        taglineLabel.setFont(new Font("Helvetica Nueue", Font.BOLD | Font.ITALIC, 32));
+        taglineLabel.setFont(new Font("Helvetica Neue", Font.BOLD | Font.ITALIC, 32));
         taglineLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        subtextLabel = new JLabel("DLSU - Manila’s newest pioneer of Korean cloud kitchen.");
+        // Subtext - original font and size
+        subtextLabel = new JLabel("DLSU - Manila's newest pioneer of Korean cloud kitchen.");
         subtextLabel.setFont(new Font("Helvetica Neue", Font.PLAIN, 20));
         subtextLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -96,7 +94,7 @@ public class CustomerHomePageView {
         bodyPanel.add(subtextLabel);
         bodyPanel.add(Box.createVerticalStrut(30));
 
-        // View Menu Button
+        // View Menu Button - original styling
         viewMenuButton = new JButton("View Menus");
         viewMenuButton.setFont(new Font("Helvetica Neue", Font.BOLD, 22));
         viewMenuButton.setForeground(Color.BLACK);
@@ -113,7 +111,7 @@ public class CustomerHomePageView {
         // ================= FOOTER ==================
         footerPanel = new JPanel();
         footerPanel.setBackground(Color.WHITE);
-        footerLabel = new JLabel("2025 © Korean Express Inc.  All Rights Reserved.");
+        footerLabel = new JLabel("2025 © Korean Express Inc. All Rights Reserved.");
         footerLabel.setFont(new Font("Helvetica Neue", Font.BOLD, 14));
         footerPanel.add(footerLabel);
 
@@ -122,25 +120,19 @@ public class CustomerHomePageView {
         frame.setVisible(true);
     }
 
+    private JButton makeNavButton(String text) {
+        JButton b = new JButton(text);
+        b.setFont(new Font("SansSerif", Font.BOLD, 20));
+        b.setContentAreaFilled(false);
+        b.setBorderPainted(false);
+        b.setFocusPainted(false);
+        b.setForeground(new Color(230, 0, 0));
+        return b;
+    }
+
     // ================= GETTERS ==================
     public JFrame getFrame() {
         return frame;
-    }
-
-    public JButton getLogoutButton() {
-        return logoutButton;
-    }
-
-    public JButton getPaymentsButton() {
-        return paymentsButton;
-    }
-
-    public JButton getOrdersButton() {
-        return ordersButton;
-    }
-
-    public JButton getProfileButton() {
-        return profileButton;
     }
 
     public JButton getViewMenuButton() {

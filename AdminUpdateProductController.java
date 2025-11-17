@@ -26,8 +26,8 @@ public class AdminUpdateProductController {
             public void actionPerformed(ActionEvent e){
                 view.getFrame().dispose();
 
-                AdminHomePageView home = new AdminHomePageView();
-                new AdminHomePageController(home, adminId);
+                AdminViewProductsView home = new AdminViewProductsView();
+                new AdminViewProductsController(home, adminId);
             }
         });
 
@@ -37,15 +37,6 @@ public class AdminUpdateProductController {
 
                 LandingPageView landing = new LandingPageView();
                 new LandingPageController(landing);
-            }
-        });
-
-        view.getSettingsButton().addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e){
-               view.getFrame().dispose();
-
-                AdminSettingsView settings = new AdminSettingsView();
-                //new AdminSettingsController(settings);
             }
         });
     }

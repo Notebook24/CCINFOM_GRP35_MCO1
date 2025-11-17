@@ -22,7 +22,7 @@ public class CustomerSettingsController {
                     return;
                 } else {
                     updateCustomerDetails();
-                    openHomePage();
+                    // Removed openHomePage() - user stays on settings page
                 }
             }
         });
@@ -75,15 +75,23 @@ public class CustomerSettingsController {
         String email = customerSettingsView.getEmail().trim();
         String address = customerSettingsView.getAddress().trim();
 
-        String sql = "UPDATE customers SET first_name = ?, last_name = ?, email = ?, address = ? WHERE customer_id = ?";
+        // Extract city from address (3rd value after 2 commas)
+        String[] parts = address.split(",");
+        String cityName = parts.length >= 3 ? parts[2].trim() : "";
+
+        // Get city_id from Cities table
+        int cityId = getCityId(cityName);
+        
+        String sql = "UPDATE customers SET first_name = ?, last_name = ?, email = ?, address = ?, city_id = ? WHERE customer_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)){
-            
+
             pstmt.setString(1, firstName);
             pstmt.setString(2, lastName);
             pstmt.setString(3, email);
             pstmt.setString(4, address);
-            pstmt.setInt(5, customerId);
+            pstmt.setInt(5, cityId); // update city_id
+            pstmt.setInt(6, customerId);
 
             int rowsUpdated = pstmt.executeUpdate();
             if (rowsUpdated > 0){
@@ -91,6 +99,8 @@ public class CustomerSettingsController {
                         "Details updated successfully!",
                         "Success",
                         JOptionPane.INFORMATION_MESSAGE);
+                // User stays on settings page - no navigation needed
+                // The fields already show the updated values since they're bound to the text fields
             }
         } 
         catch (SQLException ex){
@@ -110,9 +120,27 @@ public class CustomerSettingsController {
         }
     }
 
+    // Helper method to get city_id from Cities table
+    private int getCityId(String cityName){
+        int id = 0; // default in case city not found
+        if (cityName.isEmpty()) return id;
+        
+        String sql = "SELECT city_id FROM Cities WHERE city_name = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setString(1, cityName);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()){
+                id = rs.getInt("city_id");
+            }
+        } catch (SQLException ex){
+            ex.printStackTrace();
+        }
+        return id;
+    }
+
     private void openHomePage(){
         customerSettingsView.getFrame().dispose();
-
         CustomerHomePageView homePageView = new CustomerHomePageView();
         new CustomerHomePageController(homePageView, customerId);
     }

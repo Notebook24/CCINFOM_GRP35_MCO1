@@ -1,6 +1,8 @@
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
+import java.util.List;
 import java.util.*;
 
 public class AdminViewProductsController {
@@ -14,12 +16,12 @@ public class AdminViewProductsController {
 
         loadProducts();
 
+        // Add Product button now opens the proper add product view
         view.getAddButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
-                view.getFrame().dispose();
-                AdminAddProductView addProductView = new AdminAddProductView();
-                new AdminAddProductController(addProductView, adminId);
+                // Open the dedicated Add Product view
+                openAddProductView();
             }
         });
 
@@ -31,13 +33,42 @@ public class AdminViewProductsController {
                 new AdminHomePageController(homePageView, adminId);
             }
         });
+
+        // Settings button listener
+        view.getSettingsButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                view.getFrame().dispose();
+                AdminSettingsView adminSettingsView = new AdminSettingsView();
+                new AdminSettingsController(adminSettingsView, adminId);
+            }
+        });
+
+        // Logout button listener
+        view.getLogoutButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                view.getFrame().dispose();
+                LandingPageView landingPageView = new LandingPageView();
+                new LandingPageController(landingPageView);
+            }
+        });
+    }
+
+    private void openAddProductView() {
+        // Close current view
+        view.getFrame().dispose();
+        
+        // Open the dedicated Add Product view with its controller
+        AdminAddProductView addProductView = new AdminAddProductView();
+        new AdminAddProductController(addProductView, adminId);
     }
 
     private void loadProducts(){
         List<MenuProduct> products = new ArrayList<>();
         try{
             conn = DBConnection.getConnection();
-            String sql = "SELECT * FROM Menus";
+            String sql = "SELECT * FROM Menus ORDER BY menu_name";
             PreparedStatement ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
@@ -54,28 +85,11 @@ public class AdminViewProductsController {
 
             view.displayProducts(products);
 
+            // Add action listeners to dynamic buttons
             for (int i = 0; i < products.size(); i++){
-                MenuProduct product = products.get(i);
+                final MenuProduct product = products.get(i);
 
-                view.getDeleteButtons().get(i).addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e){
-                        int choice = JOptionPane.showConfirmDialog(null,
-                            "Are you sure you want to delete " + product.getName() + "?",
-                            "Confirm Delete", JOptionPane.YES_NO_OPTION);
-                        if (choice == JOptionPane.YES_OPTION){
-                            deleteProduct(product.getId());
-                        }
-                    }
-                });
-
-                view.getAvailabilityLabels().get(i).addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e){
-                        toggleAvailability(product);
-                    }
-                });
-
+                // Edit button listener
                 view.getProductButtons().get(i).addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e){
@@ -84,10 +98,32 @@ public class AdminViewProductsController {
                         new AdminUpdateProductController(updateView, adminId, product.getId());
                     }
                 });
+
+                // Delete button listener
+                view.getDeleteButtons().get(i).addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e){
+                        int choice = JOptionPane.showConfirmDialog(null,
+                            "Are you sure you want to delete \"" + product.getName() + "\"?",
+                            "Confirm Delete", JOptionPane.YES_NO_OPTION);
+                        if (choice == JOptionPane.YES_OPTION){
+                            deleteProduct(product.getId());
+                        }
+                    }
+                });
+
+                // Availability toggle listener
+                view.getAvailabilityLabels().get(i).addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e){
+                        toggleAvailability(product);
+                    }
+                });
             }
         } 
         catch (SQLException ex){
             ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error loading products: " + ex.getMessage());
         }
     }
 

@@ -115,35 +115,97 @@ public class CustomerPaymentSessionController {
         String ref = generateReference();
 
         try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
 
-            String insertSQL =
-                "INSERT INTO Payments (delivery_fee, total_price, amount_paid, reference_number, is_paid, order_id, customer_id) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try {
+                // First, check if there's already a payment for this order
+                String checkPaymentSQL = "SELECT payment_id FROM Payments WHERE order_id = ?";
+                boolean paymentExists = false;
+                int existingPaymentId = -1;
+                
+                try (PreparedStatement psCheck = conn.prepareStatement(checkPaymentSQL)) {
+                    psCheck.setInt(1, orderId);
+                    ResultSet rs = psCheck.executeQuery();
+                    
+                    if (rs.next()) {
+                        paymentExists = true;
+                        existingPaymentId = rs.getInt("payment_id");
+                    }
+                }
 
-            PreparedStatement ps = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS);
-            ps.setDouble(1, deliveryFee);
-            ps.setDouble(2, subtotal + deliveryFee);
-            ps.setDouble(3, amountPaid);
-            ps.setString(4, ref);
-            ps.setInt(5, isPayNow ? 1 : 0);
-            ps.setInt(6, orderId);
-            ps.setInt(7, customerId);
+                if (paymentExists) {
+                    // Payment already exists, update it with paid_date if paying now
+                    String updateSQL;
+                    if (isPayNow) {
+                        updateSQL = "UPDATE Payments SET delivery_fee = ?, total_price = ?, " +
+                                   "amount_paid = ?, reference_number = ?, is_paid = 1, " +
+                                   "paid_date = NOW() WHERE order_id = ?";
+                    } else {
+                        updateSQL = "UPDATE Payments SET delivery_fee = ?, total_price = ?, " +
+                                   "amount_paid = ?, reference_number = ?, is_paid = 0, " +
+                                   "paid_date = NULL WHERE order_id = ?";
+                    }
+                    
+                    try (PreparedStatement psUpdate = conn.prepareStatement(updateSQL)) {
+                        psUpdate.setDouble(1, deliveryFee);
+                        psUpdate.setDouble(2, subtotal + deliveryFee);
+                        psUpdate.setDouble(3, amountPaid);
+                        psUpdate.setString(4, ref);
+                        psUpdate.setInt(5, orderId);
+                        psUpdate.executeUpdate();
+                    }
+                } else {
+                    // No payment exists, insert new one
+                    String insertSQL;
+                    if (isPayNow) {
+                        insertSQL = "INSERT INTO Payments (delivery_fee, total_price, amount_paid, " +
+                                   "reference_number, is_paid, paid_date, order_id, customer_id) " +
+                                   "VALUES (?, ?, ?, ?, 1, NOW(), ?, ?)";
+                    } else {
+                        insertSQL = "INSERT INTO Payments (delivery_fee, total_price, amount_paid, " +
+                                   "reference_number, is_paid, paid_date, order_id, customer_id) " +
+                                   "VALUES (?, ?, ?, ?, 0, NULL, ?, ?)";
+                    }
+                    
+                    try (PreparedStatement psInsert = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS)) {
+                        psInsert.setDouble(1, deliveryFee);
+                        psInsert.setDouble(2, subtotal + deliveryFee);
+                        psInsert.setDouble(3, amountPaid);
+                        psInsert.setString(4, ref);
+                        psInsert.setInt(5, orderId);
+                        psInsert.setInt(6, customerId);
+                        psInsert.executeUpdate();
+                    }
+                }
 
-            int rows = ps.executeUpdate();
+                // Update order status if paying now
+                if (isPayNow) {
+                    String updateOrderSQL = "UPDATE Orders SET status = 'Preparing' WHERE order_id = ?";
+                    try (PreparedStatement psOrder = conn.prepareStatement(updateOrderSQL)) {
+                        psOrder.setInt(1, orderId);
+                        psOrder.executeUpdate();
+                    }
+                }
 
-            // Get generated payment ID
-            int paymentId = -1;
+                conn.commit();
 
-            ResultSet keys = ps.getGeneratedKeys();
+                // Get the payment ID for receipt
+                int paymentId = existingPaymentId;
+                if (!paymentExists) {
+                    try (PreparedStatement psGetId = conn.prepareStatement("SELECT payment_id FROM Payments WHERE order_id = ?")) {
+                        psGetId.setInt(1, orderId);
+                        ResultSet rs = psGetId.executeQuery();
+                        if (rs.next()) {
+                            paymentId = rs.getInt("payment_id");
+                        }
+                    }
+                }
 
-            if (keys.next()) 
-                paymentId = keys.getInt(1);
-
-            if (rows > 0) {
                 if (isPayNow) {
                     JOptionPane.showMessageDialog(null, "Payment Successful!\nReference: " + ref);
                     view.getFrame().dispose();
 
+                    // Go to receipt page
                     CustomerReceiptPageView receiptView = new CustomerReceiptPageView();
                     new CustomerReceiptPageController(receiptView, customerId, orderId, paymentId);
 
@@ -154,10 +216,15 @@ public class CustomerPaymentSessionController {
                     CustomerHomePageView homeView = new CustomerHomePageView();
                     new CustomerHomePageController(homeView, customerId);
                 }
+
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
             }
 
         } catch (SQLException ex) {
             ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Payment failed: " + ex.getMessage());
         }
     }
 

@@ -28,7 +28,7 @@ CREATE TABLE Customers (
     email VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(100) NOT NULL, -- cipher the password
     address VARCHAR(50) NOT NULL,
-    city_id INT NOT NULL,
+    city_id INT,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (city_id) REFERENCES Cities(city_id)
@@ -86,6 +86,7 @@ CREATE TABLE Payments (
     is_paid TINYINT DEFAULT 0 NOT NULL,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+    paid_date DATETIME,
     order_id INT NOT NULL,
     customer_id INT NOT NULL,
     FOREIGN KEY (order_id) REFERENCES Orders(order_id)

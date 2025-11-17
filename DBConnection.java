@@ -14,7 +14,7 @@ public class DBConnection{
     /**
      * Password of the SQL account.
      */
-    private static final String PASSWORD = ""; //Papalit ung password sa password ng MySQL mo
+    private static final String PASSWORD = "Choichoi22"; //Papalit ung password sa password ng MySQL mo
 
     /**
      * Creates a connection between the Java applictaion and the database.

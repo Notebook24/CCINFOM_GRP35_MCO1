@@ -10,27 +10,17 @@ public class CustomerMenuPageController {
     private Connection conn;
     private Map<Integer, Integer> cartMap;
 
-    //Ang map is nimamatch nya ung menu Id sa quantity ng menu na pinili ng user using key avlue pairs
-    //Ung mga inadd lang ni user sa cart ung nasa loob ng map
-    //Sample: User added to cart 2 spaggetti (menu_id = 1), 1 bear brand (menu_id = 2)
-
-    //Map<Integer, Integer> = {1 : 2, 2 : 1}
-    //Pinapasa to sa cart controller and vice versa para maretain ung mga iandd to cart ni suer pag bumalik sa menu
-
     public CustomerMenuPageController(CustomerMenuPageView view, int id){
-        this.view = view;
-        customerId = id;
-        this.cartMap = new HashMap<>();
-        loadAvailableProducts();
-        attachMenuListeners();
+        this(view, id, null);
     }
 
     public CustomerMenuPageController(CustomerMenuPageView view, int id, Map<Integer, Integer> cartMap){
         this.view = view;
-        customerId = id;
+        this.customerId = id;
         this.cartMap = (cartMap != null) ? cartMap : new HashMap<>();
         loadAvailableProducts();
         attachMenuListeners();
+        setupNavigation(); // Add navigation setup
     }
 
     private void loadAvailableProducts(){
@@ -56,7 +46,6 @@ public class CustomerMenuPageController {
 
             view.displayProducts(products, cartMap);
             updateTotals();
-
         } 
         catch (SQLException e){
             e.printStackTrace();
@@ -64,7 +53,64 @@ public class CustomerMenuPageController {
         }
     }
 
-    private void attachMenuListeners(){
+    private void setupNavigation() {
+        // Home button - go to home page
+        view.getHomeButton().addActionListener(e -> {
+            view.getFrame().dispose();
+            CustomerHomePageView homeView = new CustomerHomePageView();
+            new CustomerHomePageController(homeView, customerId);
+        });
+
+        // Payments button - show message (can be implemented later)
+        view.getPaymentsButton().addActionListener(e -> {
+            JOptionPane.showMessageDialog(view.getFrame(), 
+                "Payments functionality coming soon!");
+        });
+
+        // Orders button - go to order tracking page
+        view.getOrdersButton().addActionListener(e -> {
+            view.getFrame().dispose();
+            CustomerDeliveryTrackerView trackerView = new CustomerDeliveryTrackerView();
+            new CustomerDeliveryTrackerController(trackerView, customerId);
+        });
+
+        // Profile button - go to settings page
+        view.getProfileButton().addActionListener(e -> {
+            view.getFrame().dispose();
+            CustomerSettingsView settingsView = new CustomerSettingsView();
+            new CustomerSettingsController(settingsView, customerId);
+        });
+
+        // Logout button - confirm and go to landing page
+        view.getLogoutButton().addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                view.getFrame(), 
+                "Are you sure you want to logout?", 
+                "Confirm Logout", 
+                JOptionPane.YES_NO_OPTION
+            );
+            
+            if (confirm == JOptionPane.YES_OPTION) {
+                view.getFrame().dispose();
+                LandingPageView landingPageView = new LandingPageView();
+                new LandingPageController(landingPageView);
+            }
+        });
+    }
+
+    private void attachMenuListeners() {
+        // Checkout button
+        view.getCheckoutButton().addActionListener(e -> {
+            if (cartMap.isEmpty()) {
+                JOptionPane.showMessageDialog(view.getFrame(), "Your cart is empty!");
+                return;
+            }
+            view.getFrame().dispose();
+            CustomerCartPageView cartPageView = new CustomerCartPageView();
+            new CustomerCartPageController(cartPageView, customerId, cartMap);
+        });
+
+        // Cart buttons
         List<JButton> cartButtons = view.getCartButtons();
         List<JButton> plusButtons = view.getPlusButtons();
         List<JButton> minusButtons = view.getMinusButtons();
@@ -78,99 +124,45 @@ public class CustomerMenuPageController {
             JButton minusBtn = minusButtons.get(i);
             JLabel qtyLabel = quantityLabels.get(i);
 
-            cartBtn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e){
-                    if (cartMap.containsKey(product.getId())){
-                        cartMap.remove(product.getId());
-                        cartBtn.setText("Add to Cart");
-                        qtyLabel.setText("0");
-                        plusBtn.setEnabled(false);
-                        minusBtn.setEnabled(false);
-                    } 
-                    else {
-                        cartMap.put(product.getId(), 1);
-                        cartBtn.setText("Remove from Cart");
-                        qtyLabel.setText("1");
-                        plusBtn.setEnabled(true);
-                        minusBtn.setEnabled(true);
-                    }
+            cartBtn.addActionListener(ev -> {
+                if (cartMap.containsKey(product.getId())) {
+                    cartMap.remove(product.getId());
+                    view.updateCartItemState(index, 0, false);
+                } else {
+                    cartMap.put(product.getId(), 1);
+                    view.updateCartItemState(index, 1, true);
+                }
+                updateTotals();
+            });
+
+            plusBtn.addActionListener(ev -> {
+                if (cartMap.containsKey(product.getId())) {
+                    int qty = cartMap.get(product.getId()) + 1;
+                    cartMap.put(product.getId(), qty);
+                    view.updateCartItemState(index, qty, true);
                     updateTotals();
                 }
             });
 
-            plusBtn.addActionListener(new ActionListener(){
-                @Override
-                public void actionPerformed(ActionEvent e){
-                    if (cartMap.containsKey(product.getId())){
-                        int qty = Integer.parseInt(qtyLabel.getText());
-                        qty++;
-                        qtyLabel.setText(String.valueOf(qty));
+            minusBtn.addActionListener(ev -> {
+                if (cartMap.containsKey(product.getId())) {
+                    int qty = cartMap.get(product.getId()) - 1;
+                    if (qty <= 0) {
+                        cartMap.remove(product.getId());
+                        view.updateCartItemState(index, 0, false);
+                    } else {
                         cartMap.put(product.getId(), qty);
-                        updateTotals();
+                        view.updateCartItemState(index, qty, true);
                     }
-                }
-            });
-
-            minusBtn.addActionListener(new ActionListener(){
-                @Override
-                public void actionPerformed(ActionEvent e){
-                    if (cartMap.containsKey(product.getId())){
-                        int qty = Integer.parseInt(qtyLabel.getText());
-                        if (qty > 1){
-                            qty--;
-                            qtyLabel.setText(String.valueOf(qty));
-                            cartMap.put(product.getId(), qty);
-                        } 
-                        else {
-                            cartMap.remove(product.getId());
-                            cartBtn.setText("Add to Cart");
-                            qtyLabel.setText("0");
-                            plusBtn.setEnabled(false);
-                            minusBtn.setEnabled(false);
-                        }
-                        updateTotals();
-                    }
+                    updateTotals();
                 }
             });
         }
-
-        // Add navigation listeners
-        view.getCheckoutButton().addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e){
-                if (cartMap.isEmpty()) {
-                    JOptionPane.showMessageDialog(view.getFrame(), "Your cart is empty!");
-                    return;
-                }
-                view.getFrame().dispose();
-                CustomerCartPageView cartPageView = new CustomerCartPageView();
-                new CustomerCartPageController(cartPageView, customerId, cartMap);
-            }
-        });
-
-        view.getLogoutButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e){
-                view.getFrame().dispose();
-                LandingPageView landingPageView = new LandingPageView();
-                new LandingPageController(landingPageView);
-            }
-        });
-
-        view.getSettingsButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e){
-                view.getFrame().dispose();
-                CustomerSettingsView settingsView = new CustomerSettingsView();
-                new CustomerSettingsController(settingsView, customerId);
-            }
-        });
     }
 
     private void updateTotals(){
         double totalCost = 0;
-        int totalSeconds = 0;
+        int totalPrepSeconds = 0;
 
         for (MenuProduct product : products){
             if (cartMap.containsKey(product.getId())){
@@ -182,54 +174,27 @@ public class CustomerMenuPageController {
                 int h = Integer.parseInt(parts[0]);
                 int m = Integer.parseInt(parts[1]);
                 int s = Integer.parseInt(parts[2]);
-                totalSeconds += (h * 3600 + m * 60 + s) * qty;
+                totalPrepSeconds += (h * 3600 + m * 60 + s) * qty;
             }
         }
 
-        
-    int h = totalSeconds / 3600;
-    int m = (totalSeconds % 3600) / 60;
-    int s = totalSeconds % 60;
+        int h = totalPrepSeconds / 3600;
+        int m = (totalPrepSeconds % 3600) / 60;
+        int s = totalPrepSeconds % 60;
 
-    StringBuilder formatted = new StringBuilder();
-
-    if (h > 0) 
-    {
-        formatted.append(h).append(" hr");
-        
-        if (h > 1) 
-            formatted.append("s");
-    }
-
-    if (m > 0) 
-    {
-        if (formatted.length() > 0) {
-            formatted.append(h > 0 && s == 0 ? " and " : ", ");
+        StringBuilder formattedPrep = new StringBuilder();
+        if (h > 0) formattedPrep.append(h).append(" hr").append(h>1?"s":"");
+        if (m > 0) {
+            if (formattedPrep.length()>0) formattedPrep.append(h>0 && s==0?" and ":", ");
+            formattedPrep.append(m).append(" min").append(m>1?"s":"");
         }
-            formatted.append(m).append(" min");
-            
-        if (m > 1) 
-            formatted.append("s");
-    }
-
-        
-    if (s > 0) 
-    {
-        if (formatted.length() > 0) {
-            formatted.append(" and ");
+        if (s > 0) {
+            if (formattedPrep.length()>0) formattedPrep.append(" and ");
+            formattedPrep.append(s).append(" sec").append(s>1?"s":"");
         }
-            formatted.append(s).append(" sec");
-            
-        if (s > 1) 
-            formatted.append("s");
-        }
-
-        // handle the case where all are zero
-        if (formatted.length() == 0) {
-            formatted.append("0 secs");
-        }
+        if (formattedPrep.length()==0) formattedPrep.append("0 secs");
 
         view.getTotalCostLabel().setText("TOTAL COST: ₱" + String.format("%.2f", totalCost));
-        view.getPrepTimeLabel().setText("PREP TIME: " + formatted);
+        view.getPrepTimeLabel().setText("PREP TIME: " + formattedPrep);
     }
 }

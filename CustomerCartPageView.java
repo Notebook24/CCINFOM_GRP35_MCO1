@@ -8,7 +8,7 @@ public class CustomerCartPageView {
     private JFrame frame;
     private JPanel headerPanel, summaryPanel, footerPanel;
     private JButton returnButton, checkOutButton;
-    private JLabel logoLabel, totalCostLabel, totalPrepTimeLabel;
+    private JLabel logoLabel, totalCostLabel, totalPrepTimeLabel, totalDeliveryTimeLabel;
 
     private List<JLabel> nameLabels;
     private List<JLabel> priceLabels;
@@ -22,12 +22,12 @@ public class CustomerCartPageView {
         frame.setLocationRelativeTo(null);
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
-        // header
+        // Header
         headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBorder(BorderFactory.createEmptyBorder(30, 100, 20, 100));
         headerPanel.setBackground(Color.WHITE);
 
-        // left: Logo
+        // Left: Logo
         JPanel logoPanel = new JPanel();
         logoPanel.setBackground(Color.WHITE);
         ImageIcon rawLogo = new ImageIcon("design_images/koreanexpress-logo.png");
@@ -36,7 +36,7 @@ public class CustomerCartPageView {
         logoLabel = new JLabel(logoIcon);
         logoPanel.add(logoLabel);
 
-        // right: "Your Cart — so far." label
+        // Right: Title
         JLabel cartTitle = new JLabel("Your Cart — so far.");
         cartTitle.setFont(new Font("SansSerif", Font.BOLD, 40));
         cartTitle.setForeground(new Color(230, 0, 0));
@@ -45,12 +45,11 @@ public class CustomerCartPageView {
         titlePanel.setBackground(Color.WHITE);
         titlePanel.add(cartTitle);
 
-        // assemble Header
         headerPanel.add(logoPanel, BorderLayout.WEST);
         headerPanel.add(titlePanel, BorderLayout.EAST);
         frame.add(headerPanel, BorderLayout.NORTH);
 
-        // summary panel
+        // Summary Panel
         summaryPanel = new JPanel();
         summaryPanel.setLayout(new GridBagLayout());
         summaryPanel.setBackground(Color.WHITE);
@@ -61,12 +60,12 @@ public class CustomerCartPageView {
         scrollPane.getVerticalScrollBar().setUnitIncrement(20);
         frame.add(scrollPane, BorderLayout.CENTER);
 
-        // footer
+        // Footer
         footerPanel = new JPanel(new BorderLayout());
         footerPanel.setBorder(BorderFactory.createEmptyBorder(20, 150, 40, 150));
         footerPanel.setBackground(Color.WHITE);
 
-        // Left Side: Subtotal and Total Prep Time
+        // Info panel (Subtotal, Prep Time, Delivery Time)
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setBackground(Color.WHITE);
@@ -79,11 +78,17 @@ public class CustomerCartPageView {
         totalPrepTimeLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
         totalPrepTimeLabel.setForeground(new Color(230, 0, 0));
 
+        totalDeliveryTimeLabel = new JLabel("DELIVERY TIME: 0 mins");
+        totalDeliveryTimeLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
+        totalDeliveryTimeLabel.setForeground(new Color(230, 0, 0));
+
         infoPanel.add(totalCostLabel);
         infoPanel.add(Box.createVerticalStrut(10));
         infoPanel.add(totalPrepTimeLabel);
+        infoPanel.add(Box.createVerticalStrut(10));
+        infoPanel.add(totalDeliveryTimeLabel);
 
-        // Right Side: Buttons
+        // Button panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 30, 20));
         buttonPanel.setBackground(Color.WHITE);
 
@@ -199,23 +204,28 @@ public class CustomerCartPageView {
         }
     }
 
-    public JFrame getFrame() { 
-        return frame; 
-    }
-    
-    public JButton getReturnButton() { 
-        return returnButton; 
+    // ===== Getters formatted properly =====
+    public JFrame getFrame() {
+        return frame;
     }
 
-    public JButton getCheckOutButton() { 
-        return checkOutButton; 
+    public JButton getReturnButton() {
+        return returnButton;
     }
 
-    public JLabel getTotalCostLabel() { 
-        return totalCostLabel; 
+    public JButton getCheckOutButton() {
+        return checkOutButton;
     }
 
-    public JLabel getTotalPrepTimeLabel() { 
-        return totalPrepTimeLabel; 
+    public JLabel getTotalCostLabel() {
+        return totalCostLabel;
+    }
+
+    public JLabel getTotalPrepTimeLabel() {
+        return totalPrepTimeLabel;
+    }
+
+    public JLabel getTotalDeliveryTimeLabel() {
+        return totalDeliveryTimeLabel;
     }
 }

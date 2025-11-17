@@ -2,39 +2,38 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Displays the Admin Settings Page of the Incorporation App.
+ * Displays the Admin Settings Page of the Restaurant App.
  */
 public class AdminSettingsView {
     private JFrame frame;
     private JPanel headerPanel, formPanel;
-    private JButton logoutButton, settingsButton, editProfileButton;
-    private JLabel logoLabel, firstNameLabel, lastNameLabel, passwordLabel;
-    private JTextField firstNameField, lastNameField;
-    private JPasswordField passwordField;
+    private JButton logoutButton, changePasswordButton;
+    private JButton confirmButton, backButton;
+    private JTextField firstNameField, lastNameField, emailField;
+    private JLabel logoLabel, warningLabel;
 
     /**
      * Constructor for AdminSettingsView class.
      */
     public AdminSettingsView() {
-        // Frame setup
         frame = new JFrame("Admin Settings Page");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 300);
-        frame.setLayout(new BorderLayout(10, 10));
+        frame.setSize(500, 400);
+        frame.setLayout(new BorderLayout());
         frame.setLocationRelativeTo(null);
 
         // ===== HEADER =====
         headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-
-        logoLabel = new JLabel("Logo of Incorporation");
-
+        
+        logoLabel = new JLabel("Logo of Restaurant");
+        
         logoutButton = new JButton("Log out");
-        settingsButton = new JButton("Settings");
+        changePasswordButton = new JButton("Change Password");
 
         JPanel rightHeaderPanel = new JPanel();
         rightHeaderPanel.add(logoutButton);
-        rightHeaderPanel.add(settingsButton);
+        rightHeaderPanel.add(changePasswordButton);
 
         headerPanel.add(logoLabel, BorderLayout.WEST);
         headerPanel.add(rightHeaderPanel, BorderLayout.EAST);
@@ -43,44 +42,99 @@ public class AdminSettingsView {
         // ===== BODY / FORM =====
         formPanel = new JPanel();
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
-        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
 
-        firstNameLabel = new JLabel("First Name:");
-        firstNameField = new JTextField(15);
-
-        lastNameLabel = new JLabel("Last Name:");
-        lastNameField = new JTextField(15);
-
-        passwordLabel = new JLabel("Password: (masked); changeable");
-        passwordField = new JPasswordField(15);
-        passwordField.setEchoChar('*');
-
-        editProfileButton = new JButton("Edit Profile");
-
-        // Add components to form
-        formPanel.add(firstNameLabel);
-        formPanel.add(firstNameField);
+        warningLabel = new JLabel("", SwingConstants.CENTER);
+        warningLabel.setForeground(Color.RED);
+        warningLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formPanel.add(warningLabel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        formPanel.add(lastNameLabel);
-        formPanel.add(lastNameField);
-        formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        firstNameField = new JTextField();
+        addField(formPanel, "First Name:", firstNameField);
 
-        formPanel.add(passwordLabel);
-        formPanel.add(passwordField);
-        formPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        lastNameField = new JTextField();
+        addField(formPanel, "Last Name:", lastNameField);
 
-        formPanel.add(editProfileButton);
-        editProfileButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        emailField = new JTextField();
+        addField(formPanel, "Email:", emailField);
+
+        confirmButton = new JButton("Confirm");
+        backButton = new JButton("Back");
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
+        buttonsPanel.add(confirmButton);
+        buttonsPanel.add(backButton);
+        formPanel.add(buttonsPanel);
 
         frame.add(formPanel, BorderLayout.CENTER);
-
-        // ===== SHOW FRAME =====
         frame.setVisible(true);
     }
 
-    // Main method for testing
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(AdminSettingsView::new);
+    private void addField(JPanel panel, String label, JTextField field) {
+        JPanel row = new JPanel(new BorderLayout(10, 0));
+        row.add(new JLabel(label), BorderLayout.WEST);
+        row.add(field, BorderLayout.CENTER);
+        panel.add(row);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+    }
+
+    public boolean validateInputs() {
+        String email = emailField.getText().trim();
+
+        if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            warningLabel.setText("Please enter a valid email address.");
+            return false;
+        }
+
+        warningLabel.setText("");
+        return true;
+    }
+
+    public JFrame getFrame() {
+        return frame;
+    }
+
+    public String getFirstName() {
+        return firstNameField.getText().trim();
+    }
+
+    public String getLastName() {
+        return lastNameField.getText().trim();
+    }
+
+    public String getEmail() {
+        return emailField.getText().trim();
+    }
+
+    public JButton getConfirm() {
+        return confirmButton;
+    }
+
+    public JButton getBackButton() {
+        return backButton;
+    }
+
+    public JButton getChangePassword() {
+        return changePasswordButton;
+    }
+
+    public JButton getLogoutButton() {
+        return logoutButton;
+    }
+
+    public JTextField getFirstNameField() {
+        return firstNameField;
+    }
+
+    public JTextField getLastNameField() {
+        return lastNameField;
+    }
+
+    public JTextField getEmailField() {
+        return emailField;
+    }
+
+    public JLabel getWarningLabel() {
+        return warningLabel;
     }
 }
