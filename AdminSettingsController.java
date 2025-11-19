@@ -49,6 +49,14 @@ public class AdminSettingsController {
                 new LandingPageController(landingPageView);
             }
         });
+
+        // Add deactivate button listener
+        adminSettingsView.getDeactivateButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deactivateAccount();
+            }
+        });
     }
 
     private void loadAdminDetails() {
@@ -111,6 +119,76 @@ public class AdminSettingsController {
                         "Failed to update details.",
                         "Error",
                         JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void deactivateAccount() {
+        // Confirm with user before deletion
+        int confirm = JOptionPane.showConfirmDialog(
+            adminSettingsView.getFrame(),
+            "WARNING: This will permanently delete your admin account!\n\n" +
+            "Are you absolutely sure you want to proceed?\n" +
+            "This action cannot be undone.",
+            "Confirm Account Deletion",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        // Perform account deletion
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            // Delete admin account
+            String sql = "DELETE FROM admins WHERE admin_id = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, adminId);
+                int rowsDeleted = pstmt.executeUpdate();
+                
+                if (rowsDeleted > 0) {
+                    conn.commit();
+                    JOptionPane.showMessageDialog(adminSettingsView.getFrame(),
+                            "Admin account deleted successfully.",
+                            "Account Deleted",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    
+                    // Return to landing page
+                    adminSettingsView.getFrame().dispose();
+                    LandingPageView landingPageView = new LandingPageView();
+                    new LandingPageController(landingPageView);
+                } else {
+                    conn.rollback();
+                    JOptionPane.showMessageDialog(adminSettingsView.getFrame(),
+                            "Failed to delete account.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (SQLException ex) {
+            try {
+                if (conn != null) conn.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(adminSettingsView.getFrame(),
+                    "An error occurred while deleting your account.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
         }
     }

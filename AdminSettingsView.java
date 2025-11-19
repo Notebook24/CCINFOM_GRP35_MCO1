@@ -8,7 +8,7 @@ public class AdminSettingsView {
     private JFrame frame;
     private JPanel headerPanel, formPanel;
     private JButton logoutButton, changePasswordButton;
-    private JButton confirmButton, backButton;
+    private JButton confirmButton, backButton, deactivateButton;
     private JTextField firstNameField, lastNameField, emailField;
     private JLabel logoLabel, warningLabel;
 
@@ -18,7 +18,7 @@ public class AdminSettingsView {
     public AdminSettingsView() {
         frame = new JFrame("Admin Settings Page");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(500, 400);
+        frame.setSize(500, 450);
         frame.setLayout(new BorderLayout());
         frame.setLocationRelativeTo(null);
 
@@ -59,12 +59,27 @@ public class AdminSettingsView {
         emailField = new JTextField();
         addField(formPanel, "Email:", emailField);
 
+        // Main action buttons
         confirmButton = new JButton("Confirm");
         backButton = new JButton("Back");
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
         buttonsPanel.add(confirmButton);
         buttonsPanel.add(backButton);
         formPanel.add(buttonsPanel);
+
+        formPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Deactivate button (separated for safety)
+        deactivateButton = new JButton("Deactivate Account");
+        deactivateButton.setForeground(Color.WHITE);
+        deactivateButton.setBackground(Color.RED);
+        deactivateButton.setOpaque(true);
+        deactivateButton.setBorderPainted(false);
+        deactivateButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JPanel deactivatePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        deactivatePanel.add(deactivateButton);
+        formPanel.add(deactivatePanel);
 
         frame.add(formPanel, BorderLayout.CENTER);
         frame.setVisible(true);
@@ -120,6 +135,10 @@ public class AdminSettingsView {
 
     public JButton getLogoutButton() {
         return logoutButton;
+    }
+
+    public JButton getDeactivateButton() {
+        return deactivateButton;
     }
 
     public JTextField getFirstNameField() {

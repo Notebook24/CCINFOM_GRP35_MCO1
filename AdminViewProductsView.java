@@ -9,7 +9,6 @@ public class AdminViewProductsView {
     private JButton logoutButton, settingsButton, addButton, backButton;
     private JLabel logoLabel, titleLabel;
     private List<JButton> productButtons = new ArrayList<>();
-    private List<JButton> deleteButtons = new ArrayList<>();
     private List<JLabel> availabilityLabels = new ArrayList<>();
 
     public AdminViewProductsView() {
@@ -117,7 +116,6 @@ public class AdminViewProductsView {
     public void displayProducts(List<MenuProduct> products){
         productPanel.removeAll();
         productButtons.clear();
-        deleteButtons.clear();
         availabilityLabels.clear();
 
         if (products.isEmpty()) {
@@ -207,7 +205,6 @@ public class AdminViewProductsView {
         buttonsPanel.setPreferredSize(new Dimension(120, 100));
 
         JButton editButton = new JButton("Edit");
-        JButton deleteButton = new JButton("Delete");
         JLabel availability = new JLabel(
             product.isAvailable() ? "Available" : "Unavailable",
             SwingConstants.CENTER
@@ -218,11 +215,6 @@ public class AdminViewProductsView {
         editButton.setBackground(new Color(200, 220, 255));
         editButton.setFocusPainted(false);
         editButton.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
-        
-        deleteButton.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        deleteButton.setBackground(new Color(255, 200, 200));
-        deleteButton.setFocusPainted(false);
-        deleteButton.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
         
         availability.setFont(new Font("SansSerif", Font.BOLD, 12));
         availability.setOpaque(true);
@@ -235,7 +227,6 @@ public class AdminViewProductsView {
         ));
 
         buttonsPanel.add(editButton);
-        buttonsPanel.add(deleteButton);
         buttonsPanel.add(availability);
 
         row.add(infoPanel, BorderLayout.CENTER);
@@ -243,7 +234,6 @@ public class AdminViewProductsView {
 
         // Store references for controller
         productButtons.add(editButton);
-        deleteButtons.add(deleteButton);
         availabilityLabels.add(availability);
 
         return row;
@@ -273,11 +263,11 @@ public class AdminViewProductsView {
         return productButtons;
     }
 
-    public List<JButton> getDeleteButtons(){
-        return deleteButtons;
-    }
-
     public List<JLabel> getAvailabilityLabels(){
         return availabilityLabels;
+    }
+
+    public JLabel getTitleLabel() {
+        return titleLabel;
     }
 }

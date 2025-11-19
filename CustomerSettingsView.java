@@ -12,7 +12,7 @@ public class CustomerSettingsView {
     private JFrame frame;
     private JPanel headerPanel, formPanel;
     private JButton logoutButton, changePasswordButton;
-    private JButton confirmButton, backButton;
+    private JButton confirmButton, backButton, deactivateButton;
     private JTextField firstNameField, lastNameField, emailField, addressField;
     private JLabel logoLabel, warningLabel;
 
@@ -25,7 +25,7 @@ public class CustomerSettingsView {
     public CustomerSettingsView(){
         frame = new JFrame("Customer Settings Page");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(500, 400);
+        frame.setSize(500, 450); // Increased height to accommodate new button
         frame.setLayout(new BorderLayout());
         frame.setLocationRelativeTo(null);
 
@@ -67,10 +67,19 @@ public class CustomerSettingsView {
 
         confirmButton = new JButton("Confirm");
         backButton = new JButton("Back");
+        deactivateButton = new JButton("Deactivate Account");
+        deactivateButton.setForeground(Color.RED);
+        
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
         buttonsPanel.add(confirmButton);
         buttonsPanel.add(backButton);
         formPanel.add(buttonsPanel);
+        
+        // Add deactivate button separately with some spacing
+        formPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        JPanel deactivatePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        deactivatePanel.add(deactivateButton);
+        formPanel.add(deactivatePanel);
 
         frame.add(formPanel, BorderLayout.CENTER);
 
@@ -149,6 +158,10 @@ public class CustomerSettingsView {
 
     public JButton getChangePassword(){
         return changePasswordButton;
+    }
+
+    public JButton getDeactivateButton(){
+        return deactivateButton;
     }
 
      public JTextField getFirstNameField(){

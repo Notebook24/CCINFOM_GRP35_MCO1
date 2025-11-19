@@ -1,6 +1,6 @@
-// AdminHomePageController.java
 import java.awt.event.*;
 import java.sql.*;
+import javax.swing.JOptionPane;
 
 public class AdminHomePageController {
     private AdminHomePageView adminHomePageView;
@@ -13,9 +13,19 @@ public class AdminHomePageController {
         adminHomePageView.getLogoutButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
-                adminHomePageView.getFrame().dispose();
-                LandingPageView landingPageView = new LandingPageView();
-                new LandingPageController(landingPageView);
+                // Add confirmation dialog before logout
+                int confirm = JOptionPane.showConfirmDialog(
+                    adminHomePageView.getFrame(), 
+                    "Are you sure you want to logout?", 
+                    "Confirm Logout", 
+                    JOptionPane.YES_NO_OPTION
+                );
+                
+                if (confirm == JOptionPane.YES_OPTION) {
+                    adminHomePageView.getFrame().dispose();
+                    LandingPageView landingPageView = new LandingPageView();
+                    new LandingPageController(landingPageView);
+                }
             }
         });
 
@@ -28,17 +38,15 @@ public class AdminHomePageController {
             }
         });
 
-        // CHANGED: Updated to use manageProductsButton
+        // Manage Products button listener
         adminHomePageView.getManageProductsButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 adminHomePageView.getFrame().dispose();
-                AdminViewProductsView viewProductsView = new AdminViewProductsView();
-                new AdminViewProductsController(viewProductsView, adminId);
+                AdminMenuGroupView viewMenuCategoryView = new AdminMenuGroupView();
+                new AdminMenuGroupController(viewMenuCategoryView, adminId);
             }
         });
-
-        // REMOVED: Add Product button listener since it's now integrated in View Products
 
         // City Groups button listener
         adminHomePageView.getManageCityGroupsButton().addActionListener(new ActionListener() {
@@ -48,6 +56,47 @@ public class AdminHomePageController {
                 AdminACityGroupReadView cityGroupView = new AdminACityGroupReadView();
                 new AdminACityGroupReadController(cityGroupView, adminId);
                 cityGroupView.setVisible(true);
+            }
+        });
+
+        // Menu Report button listener
+        adminHomePageView.getCheckMenuStatusButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                adminHomePageView.getFrame().dispose();
+                // Create and show the Menu Report system
+                AdminMenuReportController menuReportController = new AdminMenuReportController();
+            }
+        });
+
+        // ORDER FREQUENCY REPORT button listener - NEW
+        adminHomePageView.getCheckOrderStatusButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                adminHomePageView.getFrame().dispose();
+                // Create and show the Order Report system
+                AdminOrderReportController orderReportController = new AdminOrderReportController();
+            }
+        });
+
+        // Optional: Add action listeners for other report buttons if needed
+        adminHomePageView.getCheckProfitButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JOptionPane.showMessageDialog(adminHomePageView.getFrame(), 
+                    "Revenue Report feature coming soon!", 
+                    "Feature Preview", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        adminHomePageView.getCheckEngagementButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JOptionPane.showMessageDialog(adminHomePageView.getFrame(), 
+                    "Customer Engagement Report feature coming soon!", 
+                    "Feature Preview", 
+                    JOptionPane.INFORMATION_MESSAGE);
             }
         });
     }

@@ -87,51 +87,51 @@ public class CustomerDeliveryTrackerView {
         header.setLayout(new BoxLayout(header, BoxLayout.X_AXIS));
         header.setBackground(Color.WHITE);
         header.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
-        header.setPreferredSize(new Dimension(1200, 50));
+        header.setPreferredSize(new Dimension(1200, 50)); // Reduced width
         header.setMaximumSize(new Dimension(1200, 50));
 
         // COLUMN 1: Timer (empty header)
         JPanel timerHeaderPanel = new JPanel(new BorderLayout());
-        timerHeaderPanel.setPreferredSize(new Dimension(150, 50));
+        timerHeaderPanel.setPreferredSize(new Dimension(120, 50)); // Reduced
         timerHeaderPanel.setBackground(Color.WHITE);
         timerHeaderPanel.add(new JLabel(""), BorderLayout.CENTER);
 
         // COLUMN 2: Order Created (centered over date column)
         JPanel dateHeaderPanel = new JPanel(new BorderLayout());
-        dateHeaderPanel.setPreferredSize(new Dimension(200, 50)); // Match date column width
+        dateHeaderPanel.setPreferredSize(new Dimension(180, 50)); // Reduced
         dateHeaderPanel.setBackground(Color.WHITE);
         JLabel dateHeader = makeHeaderLabel("Order Created");
         dateHeaderPanel.add(dateHeader, BorderLayout.CENTER);
 
         // COLUMN 3: Status (centered over status column)
         JPanel statusHeaderPanel = new JPanel(new BorderLayout());
-        statusHeaderPanel.setPreferredSize(new Dimension(150, 50));
+        statusHeaderPanel.setPreferredSize(new Dimension(120, 50)); // Reduced
         statusHeaderPanel.setBackground(Color.WHITE);
         JLabel statusHeader = makeHeaderLabel("Status");
         statusHeaderPanel.add(statusHeader, BorderLayout.CENTER);
 
         // COLUMN 4: Price (centered over price column)
         JPanel priceHeaderPanel = new JPanel(new BorderLayout());
-        priceHeaderPanel.setPreferredSize(new Dimension(120, 50));
+        priceHeaderPanel.setPreferredSize(new Dimension(100, 50)); // Reduced
         priceHeaderPanel.setBackground(Color.WHITE);
         JLabel priceHeader = makeHeaderLabel("Price");
         priceHeaderPanel.add(priceHeader, BorderLayout.CENTER);
 
         // COLUMN 5: Action (empty header)
         JPanel actionHeaderPanel = new JPanel(new BorderLayout());
-        actionHeaderPanel.setPreferredSize(new Dimension(170, 50)); // Increased for larger button
+        actionHeaderPanel.setPreferredSize(new Dimension(280, 50)); // Reduced but still enough for buttons
         actionHeaderPanel.setBackground(Color.WHITE);
         actionHeaderPanel.add(new JLabel(""), BorderLayout.CENTER);
 
-        // Add all header columns with the same spacing as rows
+        // Add all header columns with reduced spacing
         header.add(timerHeaderPanel);
-        header.add(Box.createHorizontalStrut(140)); // spacing
+        header.add(Box.createHorizontalStrut(95)); // Reduced spacing
         header.add(dateHeaderPanel);
-        header.add(Box.createHorizontalStrut(130)); // spacing  
+        header.add(Box.createHorizontalStrut(85)); // Reduced spacing  
         header.add(statusHeaderPanel);
-        header.add(Box.createHorizontalStrut(130)); // spacing
+        header.add(Box.createHorizontalStrut(90)); // Reduced spacing
         header.add(priceHeaderPanel);
-        header.add(Box.createHorizontalStrut(140)); // spacing
+        header.add(Box.createHorizontalStrut(100)); // Reduced spacing
         header.add(actionHeaderPanel);
 
         ordersContainer.add(header);
@@ -192,7 +192,7 @@ public class CustomerDeliveryTrackerView {
     }
 
     // ===========================================================
-    // ORDER ROW - 5 COLUMNS LAYOUT
+    // ORDER ROW - 5 COLUMNS LAYOUT WITH DUAL BUTTONS
     // ===========================================================
     public static class OrderRow extends JPanel {
 
@@ -201,67 +201,104 @@ public class CustomerDeliveryTrackerView {
         public JLabel statusLabel;
         public JLabel priceLabel;
         public JButton actionButton;
+        public JButton cancelButton;
 
         public OrderRow() {
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
             setBackground(Color.WHITE);
             setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
-            setPreferredSize(new Dimension(1200, 80));
+            setPreferredSize(new Dimension(1200, 80)); // Reduced width
             setMaximumSize(new Dimension(1200, 80));
 
-            // COLUMN 1: Timer (fixed width)
+            // COLUMN 1: Timer (reduced width)
             JPanel timerPanel = new JPanel(new BorderLayout());
-            timerPanel.setPreferredSize(new Dimension(150, 80));
+            timerPanel.setPreferredSize(new Dimension(120, 80)); // Reduced
             timerPanel.setBackground(Color.WHITE);
             timeLabel = new JLabel("00:00:00", JLabel.CENTER);
             timeLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
             timeLabel.setForeground(new Color(100, 0, 0));
             timerPanel.add(timeLabel, BorderLayout.CENTER);
 
-            // COLUMN 2: Order Date (fixed width for better alignment)
+            // COLUMN 2: Order Date (reduced width)
             JPanel datePanel = new JPanel(new BorderLayout());
-            datePanel.setPreferredSize(new Dimension(200, 80)); // Fixed width for better alignment
+            datePanel.setPreferredSize(new Dimension(180, 80)); // Reduced
             datePanel.setBackground(Color.WHITE);
             dateLabel = new JLabel("YYYY-MM-DD 12:00 PM", JLabel.CENTER);
             dateLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
             datePanel.add(dateLabel, BorderLayout.CENTER);
 
-            // COLUMN 3: Status (fixed width - aligned with "Status" header)
+            // COLUMN 3: Status (reduced width)
             JPanel statusPanel = new JPanel(new BorderLayout());
-            statusPanel.setPreferredSize(new Dimension(150, 80));
+            statusPanel.setPreferredSize(new Dimension(120, 80)); // Reduced
             statusPanel.setBackground(Color.WHITE);
             statusLabel = new JLabel("PREPARING", JLabel.CENTER);
             statusLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
             statusPanel.add(statusLabel, BorderLayout.CENTER);
 
-            // COLUMN 4: Price (fixed width - aligned with "Price" header)
+            // COLUMN 4: Price (reduced width)
             JPanel pricePanel = new JPanel(new BorderLayout());
-            pricePanel.setPreferredSize(new Dimension(120, 80));
+            pricePanel.setPreferredSize(new Dimension(100, 80)); // Reduced
             pricePanel.setBackground(Color.WHITE);
             priceLabel = new JLabel("₱0.00", JLabel.CENTER);
             priceLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
             pricePanel.add(priceLabel, BorderLayout.CENTER);
 
-            // COLUMN 5: Action Button (increased width by 30)
-            JPanel actionPanel = new JPanel(new BorderLayout());
-            actionPanel.setPreferredSize(new Dimension(170, 80)); // Increased for larger button
+            // COLUMN 5: Dual Buttons - Compact but functional layout
+            JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0)); // Reduced gap
+            actionPanel.setPreferredSize(new Dimension(280, 80)); // Reduced but still functional
             actionPanel.setBackground(Color.WHITE);
-            actionButton = new JButton("Cancel Order");
-            actionButton.setFont(new Font("SansSerif", Font.BOLD, 12));
-            actionButton.setPreferredSize(new Dimension(120, 35)); // Increased from 90 to 120
+            
+            // Main action button (Pay Now/View Payments/View Receipt)
+            actionButton = new JButton("See Payments");
+            actionButton.setFont(new Font("SansSerif", Font.BOLD, 11));
             actionButton.setFocusPainted(false);
-            actionPanel.add(actionButton, BorderLayout.CENTER);
+            actionButton.setPreferredSize(new Dimension(120, 35)); // Slightly smaller buttons
+            actionButton.setMaximumSize(new Dimension(120, 35));
+            actionButton.setMinimumSize(new Dimension(120, 35));
+            
+            // Cancel button (always present)
+            cancelButton = new JButton("Cancel");
+            cancelButton.setFont(new Font("SansSerif", Font.BOLD, 12));
+            cancelButton.setFocusPainted(false);
+            cancelButton.setPreferredSize(new Dimension(120, 35)); // Slightly smaller buttons
+            cancelButton.setMaximumSize(new Dimension(120, 35));
+            cancelButton.setMinimumSize(new Dimension(120, 35));
+            
+            actionPanel.add(actionButton);
+            actionPanel.add(cancelButton);
 
-            // Add all columns with spacing (same as header)
+            // Add all columns with reduced spacing
             add(timerPanel);
-            add(Box.createHorizontalStrut(150)); // spacing
+            add(Box.createHorizontalStrut(100)); // Reduced spacing
             add(datePanel);
-            add(Box.createHorizontalStrut(150)); // spacing  
+            add(Box.createHorizontalStrut(90)); // Reduced spacing  
             add(statusPanel);
-            add(Box.createHorizontalStrut(140)); // spacing
+            add(Box.createHorizontalStrut(90)); // Reduced spacing
             add(pricePanel);
-            add(Box.createHorizontalStrut(140)); // spacing
+            add(Box.createHorizontalStrut(100)); // Reduced spacing
             add(actionPanel);
+        }
+
+        // Helper method to update button text based on status
+        public void updateActionButtonBasedOnStatus(String status) {
+            switch (status.toUpperCase()) {
+                case "PENDING":
+                    actionButton.setText("Pay Now");
+                    break;
+                case "PREPARING":
+                case "ON THE WAY":
+                    actionButton.setText("View Payments");
+                    break;
+                case "COMPLETED":
+                    actionButton.setText("View Receipt");
+                    break;
+                default:
+                    actionButton.setText("See Payments");
+            }
+            
+            // Revalidate to ensure proper layout
+            revalidate();
+            repaint();
         }
     }
 }

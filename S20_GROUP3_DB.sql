@@ -2,6 +2,17 @@ CREATE DATABASE IF NOT EXISTS S20_GROUP3_DB;
 
 USE S20_GROUP3_DB;
 
+CREATE TABLE Menu_Category (
+    menu_category_id INT AUTO_INCREMENT PRIMARY KEY,
+    menu_category_name VARCHAR(50) NOT NULL,
+    time_start TIME NOT NULL DEFAULT '00:00:00',
+    time_end TIME NOT NULL DEFAULT '23:59:59',
+    is_available TINYINT(1) NOT NULL DEFAULT 1,
+    created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_time_order CHECK (time_start < time_end)
+);
+
 CREATE TABLE City_Delivery_Groups (
     city_delivery_group_id INT AUTO_INCREMENT PRIMARY KEY,
     city_delivery_fee DECIMAL(10,2) NOT NULL CHECK (city_delivery_fee >= 0),
@@ -29,6 +40,7 @@ CREATE TABLE Customers (
     password VARCHAR(100) NOT NULL, -- cipher the password
     address VARCHAR(50) NOT NULL,
     city_id INT,
+    is_active TINYINT(1) DEFAULT 1 NOT NULL,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (city_id) REFERENCES Cities(city_id)
@@ -40,12 +52,16 @@ CREATE TABLE Menus (
     menu_id INT AUTO_INCREMENT PRIMARY KEY,
     menu_name VARCHAR(50) NOT NULL,
     menu_description VARCHAR(200) NOT NULL,
+    menu_category_id INT NOT NULL,
     unit_price DECIMAL(10,2) NOT NULL CHECK (unit_price >= 0),
     preparation_time TIME NOT NULL,
     image VARCHAR(200) NOT NULL,
     is_available TINYINT DEFAULT 1 NOT NULL,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
+    updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (menu_category_id) REFERENCES Menu_Category(menu_category_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 CREATE TABLE Orders (
@@ -147,3 +163,5 @@ DESCRIBE Cities;
 DESCRIBE City_Delivery_Groups;
 DESCRIBE Order_Lines;
 DESCRIBE Orders;
+
+

@@ -1,3 +1,4 @@
+// AdminAddProductController.java
 import java.awt.event.*;
 import java.sql.*;
 import javax.swing.JOptionPane;
@@ -5,10 +6,16 @@ import javax.swing.JOptionPane;
 public class AdminAddProductController {
     private AdminAddProductView addProductView;
     private int adminId;
+    private Integer categoryId; // Optional: pre-selected category
 
     public AdminAddProductController(AdminAddProductView view, int adminId){
+        this(view, adminId, null);
+    }
+
+    public AdminAddProductController(AdminAddProductView view, int adminId, Integer categoryId){
         this.addProductView = view;
         this.adminId = adminId;
+        this.categoryId = categoryId;
 
         addProductView.getAddProductButton().addActionListener(new ActionListener() {
             @Override
@@ -23,7 +30,12 @@ public class AdminAddProductController {
                 String prepTime = addProductView.getPrepTime().trim();
                 String imagePath = addProductView.getSavedImagePath();
 
-                String sql = "INSERT INTO Menus (menu_name, menu_description, unit_price, preparation_time, `image`) VALUES (?, ?, ?, ?, ?)";
+                String sql;
+                if (categoryId != null) {
+                    sql = "INSERT INTO Menus (menu_name, menu_description, unit_price, preparation_time, `image`, menu_category_id) VALUES (?, ?, ?, ?, ?, ?)";
+                } else {
+                    sql = "INSERT INTO Menus (menu_name, menu_description, unit_price, preparation_time, `image`) VALUES (?, ?, ?, ?, ?)";
+                }
 
                 try (Connection conn = DBConnection.getConnection();
                      PreparedStatement pstmt = conn.prepareStatement(sql)){
@@ -33,6 +45,10 @@ public class AdminAddProductController {
                     pstmt.setBigDecimal(3, new java.math.BigDecimal(priceText));
                     pstmt.setTime(4, java.sql.Time.valueOf(prepTime));
                     pstmt.setString(5, imagePath != null ? imagePath : "");
+                    
+                    if (categoryId != null) {
+                        pstmt.setInt(6, categoryId);
+                    }
 
                     System.out.println("Executing insert...");
                     int rowsInserted = pstmt.executeUpdate();
@@ -44,10 +60,17 @@ public class AdminAddProductController {
                                                "Success",
                                                      JOptionPane.INFORMATION_MESSAGE);
 
-                        // Navigate back to products view after successful addition
+                        // Navigate back to appropriate view after successful addition
                         addProductView.getFrame().dispose();
-                        AdminViewProductsView productsView = new AdminViewProductsView();
-                        new AdminViewProductsController(productsView, adminId);
+                        if (categoryId != null) {
+                            // Go back to category-specific products view
+                            AdminViewProductsView productsView = new AdminViewProductsView();
+                            new AdminViewProductsController(productsView, adminId, categoryId);
+                        } else {
+                            // Go back to all products view
+                            AdminViewProductsView productsView = new AdminViewProductsView();
+                            new AdminViewProductsController(productsView, adminId);
+                        }
                     } 
                     else{
                         JOptionPane.showMessageDialog(addProductView.getFrame(),
@@ -78,8 +101,15 @@ public class AdminAddProductController {
             public void actionPerformed(ActionEvent e){
                 addProductView.getFrame().dispose();
 
-                AdminViewProductsView productsView = new AdminViewProductsView();
-                new AdminViewProductsController(productsView, adminId);
+                if (categoryId != null) {
+                    // Go back to category-specific products view
+                    AdminViewProductsView productsView = new AdminViewProductsView();
+                    new AdminViewProductsController(productsView, adminId, categoryId);
+                } else {
+                    // Go back to all products view
+                    AdminViewProductsView productsView = new AdminViewProductsView();
+                    new AdminViewProductsController(productsView, adminId);
+                }
             }
         });
     }

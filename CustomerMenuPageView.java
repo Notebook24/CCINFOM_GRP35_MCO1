@@ -3,6 +3,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class CustomerMenuPageView {
     private JFrame frame;
@@ -175,9 +176,9 @@ public class CustomerMenuPageView {
         return ordersButton;
     }
 
-
-    public void displayProducts(List<MenuProduct> products, Map<Integer, Integer> cartMap){
-        this.products = products;
+    // FIX 1: New method to display categorized products
+    public void displayCategorizedProducts(Map<String, List<MenuProduct>> categorizedProducts, Map<Integer, Integer> cartMap) {
+        this.products = new ArrayList<>();
         cartPanel.removeAll();
 
         cartButtons = new ArrayList<>();
@@ -185,99 +186,164 @@ public class CustomerMenuPageView {
         minusButtons = new ArrayList<>();
         quantityLabels = new ArrayList<>();
 
-        for (int i = 0; i < products.size(); i++){
-            MenuProduct product = products.get(i);
+        // If no products available, show message
+        if (categorizedProducts.isEmpty()) {
+            displayNoProductsMessage();
+            return;
+        }
 
-            JPanel itemPanel = new JPanel(new BorderLayout(20, 10));
-            itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.LIGHT_GRAY));
-            itemPanel.setBackground(Color.WHITE);
-            itemPanel.setMaximumSize(new Dimension(1400, 250));
+        for (Map.Entry<String, List<MenuProduct>> entry : categorizedProducts.entrySet()) {
+            String categoryName = entry.getKey();
+            List<MenuProduct> categoryProducts = entry.getValue();
 
-            // LEFT: Image
-            ImageIcon productImage = new ImageIcon(product.getImagePath());
-            Image scaledImage = productImage.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-            JLabel imageLabel = new JLabel(new ImageIcon(scaledImage));
-            imageLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-            itemPanel.add(imageLabel, BorderLayout.WEST);
+            // Add category header
+            JPanel categoryHeaderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            categoryHeaderPanel.setBackground(Color.WHITE);
+            categoryHeaderPanel.setMaximumSize(new Dimension(1400, 60));
 
-            // CENTER: Info
-            JPanel infoPanel = new JPanel();
-            infoPanel.setBackground(Color.WHITE);
-            infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+            JLabel categoryLabel = new JLabel(categoryName);
+            categoryLabel.setFont(new Font("SansSerif", Font.BOLD, 32));
+            categoryLabel.setForeground(new Color(230, 0, 0));
+            categoryHeaderPanel.add(categoryLabel);
 
-            JLabel nameLabel = new JLabel(product.getName());
-            nameLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
-            nameLabel.setForeground(new Color(230, 0, 0));
+            cartPanel.add(categoryHeaderPanel);
+            cartPanel.add(Box.createVerticalStrut(10));
 
-            JLabel descLabel = new JLabel(product.getDescription());
-            descLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+            // Add products for this category
+            for (MenuProduct product : categoryProducts) {
+                this.products.add(product); // Add to flat list for cart operations
+                int productIndex = this.products.size() - 1;
 
-            JLabel prepLabel = new JLabel("Preparation Time: " + product.getPrepTime());
-            prepLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-
-            infoPanel.add(nameLabel);
-            infoPanel.add(Box.createVerticalStrut(10));
-            infoPanel.add(descLabel);
-            infoPanel.add(Box.createVerticalStrut(20));
-            infoPanel.add(prepLabel);
-            itemPanel.add(infoPanel, BorderLayout.CENTER);
-
-            // RIGHT: Price and Cart Controls
-            JPanel controlPanel = new JPanel();
-            controlPanel.setBackground(Color.WHITE);
-            controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
-            controlPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-            JLabel priceLabel = new JLabel("₱" + String.format("%.2f", product.getPrice()));
-            priceLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
-            priceLabel.setForeground(new Color(230, 0, 0));
-            priceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-            JButton cartButton = new JButton("Add to Cart");
-            cartButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-            cartButton.setBackground(new Color(255, 160, 160));
-            cartButton.setFocusPainted(false);
-
-            JButton plusButton = new JButton("+");
-            JButton minusButton = new JButton("-");
-            JLabel quantityLabel = new JLabel("0", SwingConstants.CENTER);
-            quantityLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-
-            JPanel quantityPanel = new JPanel();
-            quantityPanel.setBackground(Color.WHITE);
-            quantityPanel.add(minusButton);
-            quantityPanel.add(quantityLabel);
-            quantityPanel.add(plusButton);
-
-            if (cartMap != null && cartMap.containsKey(product.getId())) {
-                int quantity = cartMap.get(product.getId());
-                cartButton.setText("Remove from Cart");
-                quantityLabel.setText(String.valueOf(quantity));
-                plusButton.setEnabled(true);
-                minusButton.setEnabled(true);
-            } else {
-                plusButton.setEnabled(false);
-                minusButton.setEnabled(false);
+                JPanel itemPanel = createProductPanel(product, productIndex, cartMap);
+                cartPanel.add(itemPanel);
+                cartPanel.add(Box.createVerticalStrut(20));
             }
 
-            controlPanel.add(priceLabel);
-            controlPanel.add(Box.createVerticalStrut(20));
-            controlPanel.add(cartButton);
-            controlPanel.add(Box.createVerticalStrut(20));
-            controlPanel.add(quantityPanel);
-            itemPanel.add(controlPanel, BorderLayout.EAST);
-
-            cartPanel.add(itemPanel);
-            cartPanel.add(Box.createVerticalStrut(20));
-
-            cartButtons.add(cartButton);
-            plusButtons.add(plusButton);
-            minusButtons.add(minusButton);
-            quantityLabels.add(quantityLabel);
+            // Add some space between categories
+            cartPanel.add(Box.createVerticalStrut(30));
         }
 
         cartPanel.revalidate();
         cartPanel.repaint();
+    }
+
+    // Helper method to create product panel
+    private JPanel createProductPanel(MenuProduct product, int productIndex, Map<Integer, Integer> cartMap) {
+        JPanel itemPanel = new JPanel(new BorderLayout(20, 10));
+        itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.LIGHT_GRAY));
+        itemPanel.setBackground(Color.WHITE);
+        itemPanel.setMaximumSize(new Dimension(1400, 250));
+
+        // LEFT: Image
+        ImageIcon productImage = new ImageIcon(product.getImagePath());
+        Image scaledImage = productImage.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+        JLabel imageLabel = new JLabel(new ImageIcon(scaledImage));
+        imageLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        itemPanel.add(imageLabel, BorderLayout.WEST);
+
+        // CENTER: Info
+        JPanel infoPanel = new JPanel();
+        infoPanel.setBackground(Color.WHITE);
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+
+        JLabel nameLabel = new JLabel(product.getName());
+        nameLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
+        nameLabel.setForeground(new Color(230, 0, 0));
+
+        JLabel descLabel = new JLabel(product.getDescription());
+        descLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+
+        JLabel prepLabel = new JLabel("Preparation Time: " + product.getPrepTime());
+        prepLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+
+        infoPanel.add(nameLabel);
+        infoPanel.add(Box.createVerticalStrut(10));
+        infoPanel.add(descLabel);
+        infoPanel.add(Box.createVerticalStrut(20));
+        infoPanel.add(prepLabel);
+        itemPanel.add(infoPanel, BorderLayout.CENTER);
+
+        // RIGHT: Price and Cart Controls
+        JPanel controlPanel = new JPanel();
+        controlPanel.setBackground(Color.WHITE);
+        controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
+        controlPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel priceLabel = new JLabel("₱" + String.format("%.2f", product.getPrice()));
+        priceLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
+        priceLabel.setForeground(new Color(230, 0, 0));
+        priceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JButton cartButton = new JButton("Add to Cart");
+        cartButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        cartButton.setBackground(new Color(255, 160, 160));
+        cartButton.setFocusPainted(false);
+
+        JButton plusButton = new JButton("+");
+        JButton minusButton = new JButton("-");
+        JLabel quantityLabel = new JLabel("0", SwingConstants.CENTER);
+        quantityLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+
+        JPanel quantityPanel = new JPanel();
+        quantityPanel.setBackground(Color.WHITE);
+        quantityPanel.add(minusButton);
+        quantityPanel.add(quantityLabel);
+        quantityPanel.add(plusButton);
+
+        // Set initial state based on cart
+        if (cartMap != null && cartMap.containsKey(product.getId())) {
+            int quantity = cartMap.get(product.getId());
+            cartButton.setText("Remove from Cart");
+            quantityLabel.setText(String.valueOf(quantity));
+            plusButton.setEnabled(true);
+            minusButton.setEnabled(true);
+        } else {
+            plusButton.setEnabled(false);
+            minusButton.setEnabled(false);
+        }
+
+        controlPanel.add(priceLabel);
+        controlPanel.add(Box.createVerticalStrut(20));
+        controlPanel.add(cartButton);
+        controlPanel.add(Box.createVerticalStrut(20));
+        controlPanel.add(quantityPanel);
+        itemPanel.add(controlPanel, BorderLayout.EAST);
+
+        // Add buttons to lists for event handling
+        cartButtons.add(cartButton);
+        plusButtons.add(plusButton);
+        minusButtons.add(minusButton);
+        quantityLabels.add(quantityLabel);
+
+        return itemPanel;
+    }
+
+    // FIX 2: Method to display message when no products are available
+    public void displayNoProductsMessage() {
+        cartPanel.removeAll();
+        
+        JPanel messagePanel = new JPanel();
+        messagePanel.setBackground(Color.WHITE);
+        messagePanel.setLayout(new BorderLayout());
+        messagePanel.setBorder(BorderFactory.createEmptyBorder(100, 0, 100, 0));
+        
+        JLabel messageLabel = new JLabel("No menus available at this time. Please check back later.", SwingConstants.CENTER);
+        messageLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
+        messageLabel.setForeground(new Color(230, 0, 0));
+        
+        messagePanel.add(messageLabel, BorderLayout.CENTER);
+        cartPanel.add(messagePanel);
+        
+        cartPanel.revalidate();
+        cartPanel.repaint();
+    }
+
+    // Keep the old displayProducts method for backward compatibility
+    public void displayProducts(List<MenuProduct> products, Map<Integer, Integer> cartMap){
+        // Convert flat list to categorized map for the new display method
+        Map<String, List<MenuProduct>> categorizedProducts = new LinkedHashMap<>();
+        categorizedProducts.put("All Items", products);
+        displayCategorizedProducts(categorizedProducts, cartMap);
     }
 
     public void updateCartItemState(int productIndex, int quantity, boolean isInCart){

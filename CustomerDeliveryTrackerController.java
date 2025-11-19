@@ -121,7 +121,7 @@ public class CustomerDeliveryTrackerController {
         String sql = "SELECT o.order_id, o.preparation_time, o.delivery_time, " +
                      "o.total_price, o.status, o.order_date " +
                      "FROM Orders o " +
-                     "WHERE o.customer_id = ? AND o.status != 'Cancelled' " +
+                     "WHERE o.customer_id = ? " +
                      "ORDER BY o.order_id DESC";
 
         try (Connection conn = DBConnection.getConnection();
@@ -139,7 +139,7 @@ public class CustomerDeliveryTrackerController {
                 // Convert to PH time for display only
                 ZonedDateTime utcDateTime = orderTimestamp.toInstant().atZone(ZoneOffset.UTC);
                 ZonedDateTime phDateTime = utcDateTime.withZoneSameInstant(PH_ZONE);
-                LocalDateTime orderDateForDisplay = phDateTime.toLocalDateTime();
+                LocalDateTime orderDateForDisplay = phDateTime.toLocalDateTime().minusHours(8);
                 
                 String prepTimeStr = rs.getTime("preparation_time").toString();
                 String deliveryTimeStr = rs.getTime("delivery_time").toString();
@@ -251,9 +251,12 @@ public class CustomerDeliveryTrackerController {
                                  String deliveryTimeStr,
                                  boolean isPaid) {
 
-        // Clear any existing action listeners
+        // Clear any existing action listeners from both buttons
         for (ActionListener al : row.actionButton.getActionListeners()) {
             row.actionButton.removeActionListener(al);
+        }
+        for (ActionListener al : row.cancelButton.getActionListeners()) {
+            row.cancelButton.removeActionListener(al);
         }
 
         // Stop existing timer for this order
@@ -272,15 +275,25 @@ public class CustomerDeliveryTrackerController {
         row.actionButton.setForeground(Color.BLACK);
         row.actionButton.setOpaque(true);
         row.actionButton.setEnabled(true);
+        
+        row.cancelButton.setBackground(null);
+        row.cancelButton.setForeground(Color.BLACK);
+        row.cancelButton.setOpaque(true);
+        row.cancelButton.setEnabled(true);
 
         switch (status) {
             case "Pending":
                 row.statusLabel.setText("PENDING");
                 row.statusLabel.setForeground(Color.RED);
-                row.actionButton.setText("Pay Now");
-                row.actionButton.setBackground(Color.RED);
+                row.actionButton.setText("View Payments");
+                row.actionButton.setBackground(Color.ORANGE);
                 row.actionButton.setForeground(Color.WHITE);
                 row.actionButton.addActionListener(e -> openPaymentPage(orderId));
+                
+                row.cancelButton.setText("Cancel Order");
+                row.cancelButton.setBackground(Color.RED);
+                row.cancelButton.setForeground(Color.WHITE);
+                row.cancelButton.addActionListener(e -> cancelOrder(orderId, row));
                 
                 // FIX: No timer for pending orders
                 row.timeLabel.setText("--:--:--");
@@ -289,10 +302,15 @@ public class CustomerDeliveryTrackerController {
             case "Preparing":
                 row.statusLabel.setText("PREPARING");
                 row.statusLabel.setForeground(Color.ORANGE);
-                row.actionButton.setText("Cancel Order");
-                row.actionButton.setBackground(Color.RED);
+                row.actionButton.setText("View Receipt");
+                row.actionButton.setBackground(new Color(0, 150, 0)); // Green
                 row.actionButton.setForeground(Color.WHITE);
-                row.actionButton.addActionListener(e -> cancelOrder(orderId, row));
+                row.actionButton.addActionListener(e -> viewReceipt(orderId));
+                
+                row.cancelButton.setText("Cancel Order");
+                row.cancelButton.setBackground(Color.RED);
+                row.cancelButton.setForeground(Color.WHITE);
+                row.cancelButton.addActionListener(e -> cancelOrder(orderId, row));
                 
                 // FIX: Only start timer for paid orders that are actually preparing
                 if (isPaid) {
@@ -305,21 +323,50 @@ public class CustomerDeliveryTrackerController {
             case "In Transit":
                 row.statusLabel.setText("IN TRANSIT");
                 row.statusLabel.setForeground(new Color(255, 150, 0));
-                row.actionButton.setText("Cancel Order");
-                row.actionButton.setBackground(Color.GRAY);
-                row.actionButton.setForeground(Color.BLACK);
-                row.actionButton.setEnabled(false);
+                row.actionButton.setText("View Receipt");
+                row.actionButton.setBackground(new Color(0, 150, 0)); // Green
+                row.actionButton.setForeground(Color.WHITE);
+                row.actionButton.setEnabled(true); // Enabled
+                row.actionButton.addActionListener(e -> viewReceipt(orderId)); // FIXED: Now opens receipt
+                
+                row.cancelButton.setText("Cancel Order");
+                row.cancelButton.setBackground(Color.GRAY);
+                row.cancelButton.setForeground(Color.WHITE);
+                row.cancelButton.setEnabled(false);
+                
                 startDeliveryTimer(row, orderId, prepTimeStr, deliveryTimeStr);
                 break;
 
             case "Delivered":
                 row.statusLabel.setText("DELIVERED");
                 row.statusLabel.setForeground(new Color(0, 130, 0));
-                row.timeLabel.setText("00:00:00");
+                row.timeLabel.setText("Finished!");
                 row.actionButton.setText("View Receipt");
-                row.actionButton.setBackground(new Color(0, 150, 0));
+                row.actionButton.setBackground(new Color(0, 150, 0)); // Green
                 row.actionButton.setForeground(Color.WHITE);
                 row.actionButton.addActionListener(e -> viewReceipt(orderId));
+                
+                row.cancelButton.setText("Cancel Order");
+                row.cancelButton.setBackground(Color.GRAY);
+                row.cancelButton.setForeground(Color.WHITE);
+                row.cancelButton.setEnabled(false);
+                break;
+                
+            case "Cancelled":
+                row.statusLabel.setText("CANCELLED");
+                row.statusLabel.setForeground(Color.RED);
+                row.timeLabel.setText("--:--:--");
+                
+                row.actionButton.setText("View Payments");
+                row.actionButton.setBackground(Color.ORANGE);
+                row.actionButton.setForeground(Color.WHITE);
+                row.actionButton.setEnabled(true);
+                row.actionButton.addActionListener(e -> openPaymentPage(orderId));
+                
+                row.cancelButton.setText("Cancelled");
+                row.cancelButton.setBackground(Color.GRAY);
+                row.cancelButton.setForeground(Color.WHITE);
+                row.cancelButton.setEnabled(false);
                 break;
         }
     }
@@ -471,10 +518,21 @@ public class CustomerDeliveryTrackerController {
                     row.timeLabel.setForeground(new Color(255, 150, 0));
                     row.statusLabel.setText("IN TRANSIT");
                     row.statusLabel.setForeground(new Color(255, 150, 0));
-                    row.actionButton.setText("Cancel Order");
-                    row.actionButton.setBackground(Color.GRAY);
-                    row.actionButton.setForeground(Color.BLACK);
-                    row.actionButton.setEnabled(false);
+                    row.actionButton.setText("View Receipt");
+                    row.actionButton.setBackground(new Color(0, 150, 0)); // FIXED: Green instead of Gray
+                    row.actionButton.setForeground(Color.WHITE);
+                    row.actionButton.setEnabled(true); // FIXED: Enabled instead of disabled
+                    
+                    // Clear existing listeners and add the correct one
+                    for (ActionListener al : row.actionButton.getActionListeners()) {
+                        row.actionButton.removeActionListener(al);
+                    }
+                    row.actionButton.addActionListener(e -> viewReceipt(orderId)); // FIXED: view receipt
+                    
+                    row.cancelButton.setText("Cancel Order");
+                    row.cancelButton.setBackground(Color.GRAY);
+                    row.cancelButton.setForeground(Color.WHITE);
+                    row.cancelButton.setEnabled(false);
                     
                     // Restart timer for delivery phase
                     restartDeliveryTimer(orderId, row);
@@ -484,11 +542,16 @@ public class CustomerDeliveryTrackerController {
                     row.timeLabel.setForeground(new Color(0, 100, 0));
                     row.statusLabel.setText("DELIVERED");
                     row.statusLabel.setForeground(new Color(0, 130, 0));
-                    row.timeLabel.setText("00:00:00");
+                    row.timeLabel.setText("Finished!");
                     row.actionButton.setText("View Receipt");
                     row.actionButton.setBackground(new Color(0, 150, 0));
                     row.actionButton.setForeground(Color.WHITE);
                     row.actionButton.setEnabled(true);
+                    
+                    row.cancelButton.setText("Cancel Order");
+                    row.cancelButton.setBackground(Color.GRAY);
+                    row.cancelButton.setForeground(Color.WHITE);
+                    row.cancelButton.setEnabled(false);
                     
                     // Clear existing listeners and add new one
                     for (ActionListener al : row.actionButton.getActionListeners()) {
@@ -550,14 +613,27 @@ public class CustomerDeliveryTrackerController {
                     orderTimers.remove(orderId);
                 }
 
-                // Update UI
+                // Update UI - KEEP "View Payments" button for cancelled orders
                 row.statusLabel.setText("CANCELLED");
                 row.statusLabel.setForeground(Color.RED);
                 row.timeLabel.setText("--:--:--");
-                row.actionButton.setText("Cancelled");
-                row.actionButton.setBackground(Color.DARK_GRAY);
+                
+                // FIX: Keep "View Payments" button instead of disabling it
+                row.actionButton.setText("View Payments");
+                row.actionButton.setBackground(Color.ORANGE);
                 row.actionButton.setForeground(Color.WHITE);
-                row.actionButton.setEnabled(false);
+                row.actionButton.setEnabled(true);
+                
+                // Clear existing listeners and add the payment page listener
+                for (ActionListener al : row.actionButton.getActionListeners()) {
+                    row.actionButton.removeActionListener(al);
+                }
+                row.actionButton.addActionListener(e -> openPaymentPage(orderId));
+                
+                row.cancelButton.setText("Cancelled");
+                row.cancelButton.setBackground(Color.GRAY);
+                row.cancelButton.setForeground(Color.WHITE);
+                row.cancelButton.setEnabled(false);
                 
             } catch (SQLException ex) {
                 ex.printStackTrace();
