@@ -204,6 +204,14 @@ public class CustomerCartPageView {
         }
     }
 
+    public void disableCheckoutButton() {
+        if (checkOutButton != null) {
+            checkOutButton.setEnabled(false);
+            checkOutButton.setBackground(Color.GRAY);
+            checkOutButton.setToolTipText("Delivery is not available in your city at the moment");
+        }
+    }
+
     // ===== Getters formatted properly =====
     public JFrame getFrame() {
         return frame;

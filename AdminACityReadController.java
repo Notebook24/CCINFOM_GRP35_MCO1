@@ -10,6 +10,7 @@ public class AdminACityReadController {
     private List<CityGroup> cityGroups;
     private int adminId;
     private CityGroup currentGroup;
+    private boolean controllersInitialized = false;
 
     public AdminACityReadController(AdminACityReadView view, int groupId, List<CityGroup> cityGroups, int adminId) {
         this.view = view;
@@ -23,26 +24,43 @@ public class AdminACityReadController {
     }
 
     private void initializeController() {
-        // Add button action
-        view.getAddButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                view.getFrame().dispose();
-                openAddCityView();
-            }
-        });
+        // Only set up static listeners once
+        if (!controllersInitialized) {
+            // Add button action - SET UP ONLY ONCE
+            view.getAddButton().addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    view.getFrame().dispose();
+                    openAddCityView();
+                }
+            });
 
-        // Back button action
-        view.getBackButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                view.getFrame().dispose();
-                AdminACityGroupReadView groupView = new AdminACityGroupReadView();
-                new AdminACityGroupReadController(groupView, adminId);
-            }
-        });
+            // Back button action - SET UP ONLY ONCE
+            view.getBackButton().addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    view.getFrame().dispose();
+                    AdminACityGroupReadView groupView = new AdminACityGroupReadView();
+                    new AdminACityGroupReadController(groupView, adminId);
+                }
+            });
+            
+            controllersInitialized = true;
+        }
+        
+        // Set up update button listeners for current cities
+        setupUpdateButtonListeners();
+    }
 
-        // Set up update button listeners
+    private void setupUpdateButtonListeners() {
+        // Clear existing listeners from update buttons
+        for (JButton button : view.getUpdateButtons()) {
+            for (ActionListener al : button.getActionListeners()) {
+                button.removeActionListener(al);
+            }
+        }
+        
+        // Add new listeners for current cities
         for (int i = 0; i < view.getUpdateButtons().size(); i++) {
             final int cityIndex = i;
             view.getUpdateButtons().get(i).addActionListener(new ActionListener() {
@@ -50,18 +68,6 @@ public class AdminACityReadController {
                 public void actionPerformed(ActionEvent e) {
                     view.getFrame().dispose();
                     handleUpdateCity(cityIndex);
-                }
-            });
-        }
-
-        // Set up delete button listeners
-        for (int i = 0; i < view.getDeleteButtons().size(); i++) {
-            final int cityIndex = i;
-            view.getDeleteButtons().get(i).addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    view.getFrame().dispose();
-                    handleDeleteCity(cityIndex);
                 }
             });
         }
@@ -79,7 +85,8 @@ public class AdminACityReadController {
                 currentGroup = new CityGroup(
                     groupRs.getInt("city_delivery_group_id"),
                     groupRs.getDouble("city_delivery_fee"),
-                    groupRs.getInt("city_delivery_time_minutes")
+                    groupRs.getInt("city_delivery_time_minutes"),
+                    groupRs.getBoolean("is_available")
                 );
             }
 
@@ -94,7 +101,8 @@ public class AdminACityReadController {
                 cities.add(new City(
                     rs.getInt("city_id"),
                     rs.getString("city_name"),
-                    rs.getInt("city_delivery_group_id")
+                    rs.getInt("city_delivery_group_id"),
+                    rs.getBoolean("is_available")
                 ));
             }
 
@@ -102,8 +110,8 @@ public class AdminACityReadController {
                 currentGroup.getId(), currentGroup.getDeliveryFee(), currentGroup.getDeliveryTime());
             view.displayCities(cities, groupInfo);
             
-            // Re-initialize controller to set up listeners for new buttons
-            initializeController();
+            // Only set up update button listeners, NOT the main controller
+            setupUpdateButtonListeners();
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -116,7 +124,7 @@ public class AdminACityReadController {
         List<CityGroup> allGroups = getAllCityGroups();
         view.getFrame().dispose();
         AdminAddCityView addView = new AdminAddCityView(allGroups);
-        new AdminAddCityController(addView, groupId); // Pass current group ID
+        new AdminAddCityController(addView, allGroups, adminId);
         addView.getFrame().setVisible(true);
     }
 
@@ -124,54 +132,10 @@ public class AdminACityReadController {
         if (cityIndex >= 0 && cityIndex < cities.size()) {
             City city = cities.get(cityIndex);
             view.getFrame().dispose();
-            // Open city update view (you'll need to create this)
+            // Open city update view
             AdminACityUpdateView updateView = new AdminACityUpdateView(cityGroups);
             new AdminACityUpdateController(updateView, city.getId(), adminId);
             updateView.getFrame().setVisible(true);
-        }
-    }
-
-    private void handleDeleteCity(int cityIndex) {
-        if (cityIndex >= 0 && cityIndex < cities.size()) {
-            City cityToDelete = cities.get(cityIndex);
-            
-            int response = view.showDeleteConfirmation(cityToDelete.getName());
-            
-            if (response == JOptionPane.YES_OPTION) {
-                if (deleteCity(cityToDelete.getId())) {
-                    view.showSuccessMessage("City deleted successfully!");
-                    refreshCities();
-                } else {
-                    view.showErrorMessage("Error deleting city. It may have customers associated with it.");
-                }
-            }
-        }
-    }
-
-    private boolean deleteCity(int cityId) {
-        try (Connection conn = DBConnection.getConnection()) {
-            // Check if there are customers in this city
-            String checkSql = "SELECT COUNT(*) as customer_count FROM Customers WHERE city_id = ?";
-            PreparedStatement checkPs = conn.prepareStatement(checkSql);
-            checkPs.setInt(1, cityId);
-            ResultSet rs = checkPs.executeQuery();
-            
-            if (rs.next() && rs.getInt("customer_count") > 0) {
-                // Customers will have their city_id set to NULL due to ON DELETE SET NULL
-                // We can proceed with deletion
-            }
-
-            // Delete the city
-            String deleteSql = "DELETE FROM Cities WHERE city_id = ?";
-            PreparedStatement deletePs = conn.prepareStatement(deleteSql);
-            deletePs.setInt(1, cityId);
-            
-            int rowsAffected = deletePs.executeUpdate();
-            return rowsAffected > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
         }
     }
 
@@ -186,7 +150,8 @@ public class AdminACityReadController {
                 groups.add(new CityGroup(
                     rs.getInt("city_delivery_group_id"),
                     rs.getDouble("city_delivery_fee"),
-                    rs.getInt("city_delivery_time_minutes")
+                    rs.getInt("city_delivery_time_minutes"),
+                    rs.getBoolean("is_available")
                 ));
             }
         } catch (SQLException e) {

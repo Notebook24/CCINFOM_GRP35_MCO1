@@ -14,13 +14,11 @@ public class AdminACityReadView {
     
     // Components for dynamic buttons (will be accessed by controller)
     private java.util.List<JButton> updateButtons;
-    private java.util.List<JButton> deleteButtons;
     private java.util.List<City> currentCities;
     
     public AdminACityReadView() {
         initializeUI();
         updateButtons = new java.util.ArrayList<>();
-        deleteButtons = new java.util.ArrayList<>();
         currentCities = new java.util.ArrayList<>();
     }
     
@@ -83,7 +81,6 @@ public class AdminACityReadView {
     public void displayCities(List<City> cities, String groupInfo) {
         contentPanel.removeAll();
         updateButtons.clear();
-        deleteButtons.clear();
         currentCities.clear();
         currentCities.addAll(cities);
         
@@ -125,10 +122,9 @@ public class AdminACityReadView {
         buttonsPanel.setBackground(Color.WHITE);
         
         JButton updateButton = new JButton("Update");
-        JButton deleteButton = new JButton("Delete");
         
         // Style buttons
-        JButton[] buttons = {updateButton, deleteButton};
+        JButton[] buttons = {updateButton};
         for (JButton btn : buttons) {
             btn.setFont(new Font("SansSerif", Font.PLAIN, 14));
             btn.setBackground(Color.LIGHT_GRAY);
@@ -136,18 +132,13 @@ public class AdminACityReadView {
             btn.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         }
         
-        // Make delete button red
-        deleteButton.setBackground(new Color(255, 150, 150));
-        
         buttonsPanel.add(updateButton);
-        buttonsPanel.add(deleteButton);
         
         panel.add(infoLabel, BorderLayout.WEST);
         panel.add(buttonsPanel, BorderLayout.EAST);
         
         // Store buttons for controller to access
         updateButtons.add(updateButton);
-        deleteButtons.add(deleteButton);
         
         return panel;
     }
@@ -158,16 +149,6 @@ public class AdminACityReadView {
     
     public void showErrorMessage(String message) {
         JOptionPane.showMessageDialog(frame, message, "Error", JOptionPane.ERROR_MESSAGE);
-    }
-    
-    public int showDeleteConfirmation(String cityName) {
-        return JOptionPane.showConfirmDialog(
-            frame,
-            "Are you sure to delete the city: " + cityName + "?",
-            "Confirm Delete",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE
-        );
     }
     
     // Getters
@@ -185,10 +166,6 @@ public class AdminACityReadView {
     
     public java.util.List<JButton> getUpdateButtons() {
         return updateButtons;
-    }
-    
-    public java.util.List<JButton> getDeleteButtons() {
-        return deleteButtons;
     }
     
     public java.util.List<City> getCurrentCities() {

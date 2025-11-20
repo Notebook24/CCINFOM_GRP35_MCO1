@@ -1,4 +1,3 @@
-// AdminACityUpdateController.java
 import javax.swing.*;
 import java.awt.event.*;
 import java.sql.*;
@@ -35,6 +34,13 @@ public class AdminACityUpdateController {
                 returnToCitiesView();
             }
         });
+
+        view.getToggleAvailabilityButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleAvailability();
+            }
+        });
     }
 
     private void loadCityData() {
@@ -52,9 +58,10 @@ public class AdminACityUpdateController {
                 currentCity = new City(
                     rs.getInt("city_id"),
                     rs.getString("city_name"),
-                    rs.getInt("city_delivery_group_id")
+                    rs.getInt("city_delivery_group_id"),
+                    rs.getBoolean("is_available")
                 );
-                view.setCityData(currentCity);
+                view.setCityData(currentCity, cityGroups);
             } else {
                 view.showErrorMessage("City not found!");
                 returnToCitiesView();
@@ -77,7 +84,8 @@ public class AdminACityUpdateController {
                 cityGroups.add(new CityGroup(
                     rs.getInt("city_delivery_group_id"),
                     rs.getDouble("city_delivery_fee"),
-                    rs.getInt("city_delivery_time_minutes")
+                    rs.getInt("city_delivery_time_minutes"),
+                    rs.getBoolean("is_available")
                 ));
             }
 
@@ -108,11 +116,18 @@ public class AdminACityUpdateController {
             return;
         }
 
+        // Check if selected group is available
+        CityGroup selectedGroup = getCityGroupById(groupId);
+        if (selectedGroup != null && !selectedGroup.isAvailable()) {
+            view.showErrorMessage("Cannot assign city to an unavailable city group!");
+            return;
+        }
+
         // Update in database
         try {
-            if (updateCityInDatabase(cityName, groupId)) {
-                view.showSuccessMessage();
-                returnToCitiesView();
+            if (updateCityInDatabase(cityName, groupId, currentCity.isAvailable())) {
+                view.showSuccessMessage("City details successfully updated!");
+                loadCityData(); // Reload data to refresh view
             } else {
                 view.showErrorMessage("Failed to update city. Please try again.");
             }
@@ -120,6 +135,38 @@ public class AdminACityUpdateController {
         } catch (SQLException e) {
             e.printStackTrace();
             view.showErrorMessage("Database error: " + e.getMessage());
+        }
+    }
+
+    private void toggleAvailability() {
+        // Check if city group is available
+        CityGroup cityGroup = getCityGroupById(currentCity.getGroupId());
+        if (cityGroup != null && !cityGroup.isAvailable()) {
+            view.showErrorMessage("Cannot enable city because its city group is unavailable!");
+            return;
+        }
+
+        boolean newAvailability = !currentCity.isAvailable();
+        
+        int confirm = JOptionPane.showConfirmDialog(
+            view.getFrame(),
+            "Are you sure you want to " + (newAvailability ? "enable" : "disable") + " this city?",
+            "Confirm Availability Change",
+            JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                if (toggleCityAvailability(newAvailability)) {
+                    view.showSuccessMessage("City " + (newAvailability ? "enabled" : "disabled") + " successfully!");
+                    loadCityData(); // Reload data to refresh view
+                } else {
+                    view.showErrorMessage("Failed to update city availability.");
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                view.showErrorMessage("Database error: " + e.getMessage());
+            }
         }
     }
 
@@ -140,13 +187,35 @@ public class AdminACityUpdateController {
         return false;
     }
 
-    private boolean updateCityInDatabase(String cityName, int groupId) throws SQLException {
+    private CityGroup getCityGroupById(int groupId) {
+        for (CityGroup group : cityGroups) {
+            if (group.getId() == groupId) {
+                return group;
+            }
+        }
+        return null;
+    }
+
+    private boolean updateCityInDatabase(String cityName, int groupId, boolean isAvailable) throws SQLException {
         try (Connection conn = DBConnection.getConnection()) {
-            String sql = "UPDATE Cities SET city_name = ?, city_delivery_group_id = ? WHERE city_id = ?";
+            String sql = "UPDATE Cities SET city_name = ?, city_delivery_group_id = ?, is_available = ? WHERE city_id = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, cityName);
             ps.setInt(2, groupId);
-            ps.setInt(3, cityId);
+            ps.setBoolean(3, isAvailable);
+            ps.setInt(4, cityId);
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+        }
+    }
+
+    private boolean toggleCityAvailability(boolean newAvailability) throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            String sql = "UPDATE Cities SET is_available = ? WHERE city_id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setBoolean(1, newAvailability);
+            ps.setInt(2, cityId);
             
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;

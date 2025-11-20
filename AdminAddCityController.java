@@ -5,7 +5,6 @@ import java.util.List;
 
 public class AdminAddCityController {
     private AdminAddCityView view;
-    private int currentGroupId; // If adding from a specific group view
     private int adminId;
     private List<CityGroup> cityGroups;
 
@@ -16,12 +15,6 @@ public class AdminAddCityController {
         initializeController();
     }
 
-    public AdminAddCityController(AdminAddCityView view, int groupId) {
-        this.view = view;
-        this.currentGroupId = groupId;
-        initializeController();
-    }
-
     private void initializeController() {
         view.getAddButton().addActionListener(e -> {
             addCity();
@@ -29,18 +22,10 @@ public class AdminAddCityController {
 
         view.getCancelButton().addActionListener(e -> {
             view.getFrame().dispose();
-            // Return to appropriate view
-            if (currentGroupId > 0) {
-                // Return to cities list for this group
-                AdminACityReadView cityView = new AdminACityReadView();
-                new AdminACityReadController(cityView, currentGroupId, cityGroups, adminId);
-                cityView.setVisible(true);
-            } else {
-                // Return to main city group view
-                AdminACityGroupReadView mainView = new AdminACityGroupReadView();
-                new AdminACityGroupReadController(mainView, adminId);
-                mainView.setVisible(true);
-            }
+            // Return to main city group view
+            AdminACityGroupReadView mainView = new AdminACityGroupReadView();
+            new AdminACityGroupReadController(mainView, adminId);
+            mainView.setVisible(true);
         });
     }
 
@@ -65,19 +50,11 @@ public class AdminAddCityController {
                 view.showSuccessMessage();
                 view.clearFields();
                 
-                // Close and return to appropriate view
+                // Close and return to main city group view
                 view.getFrame().dispose();
-                if (currentGroupId > 0) {
-                    // Return to cities list for this group
-                    AdminACityReadView cityView = new AdminACityReadView();
-                    new AdminACityReadController(cityView, currentGroupId, cityGroups, adminId);
-                    cityView.setVisible(true);
-                } else {
-                    // Return to main city group view
-                    AdminACityGroupReadView mainView = new AdminACityGroupReadView();
-                    new AdminACityGroupReadController(mainView, adminId);
-                    mainView.setVisible(true);
-                }
+                AdminACityGroupReadView mainView = new AdminACityGroupReadView();
+                new AdminACityGroupReadController(mainView, adminId);
+                mainView.setVisible(true);
             } else {
                 view.showErrorMessage("Failed to add city. The city name might already exist.");
             }

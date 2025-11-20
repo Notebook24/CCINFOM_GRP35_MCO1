@@ -31,6 +31,13 @@ public class AdminACityGroupUpdateController {
                 returnToCityGroupsView();
             }
         });
+
+        view.getToggleAvailabilityButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleAvailability();
+            }
+        });
     }
 
     private void loadGroupData() {
@@ -44,7 +51,8 @@ public class AdminACityGroupUpdateController {
                 currentGroup = new CityGroup(
                     rs.getInt("city_delivery_group_id"),
                     rs.getDouble("city_delivery_fee"),
-                    rs.getInt("city_delivery_time_minutes")
+                    rs.getInt("city_delivery_time_minutes"),
+                    rs.getBoolean("is_available")
                 );
                 view.setGroupData(currentGroup);
             } else {
@@ -83,9 +91,9 @@ public class AdminACityGroupUpdateController {
             }
 
             // Update in database
-            if (updateCityGroupInDatabase(fee, time)) {
-                view.showSuccessMessage();
-                returnToCityGroupsView();
+            if (updateCityGroupInDatabase(fee, time, currentGroup.isAvailable())) {
+                view.showSuccessMessage("City group details successfully updated!");
+                loadGroupData(); // Reload data to refresh view
             } else {
                 view.showErrorMessage("Failed to update city group. Please try again.");
             }
@@ -98,16 +106,70 @@ public class AdminACityGroupUpdateController {
         }
     }
 
-    private boolean updateCityGroupInDatabase(double fee, int time) throws SQLException {
+    private void toggleAvailability() {
+        boolean newAvailability = !currentGroup.isAvailable();
+        
+        int confirm = JOptionPane.showConfirmDialog(
+            view.getFrame(),
+            "Are you sure you want to " + (newAvailability ? "enable" : "disable") + 
+            " this city group? " + (newAvailability ? "" : 
+            "\n\nWARNING: This will also disable all cities under this group!"),
+            "Confirm Availability Change",
+            JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                if (toggleCityGroupAvailability(newAvailability)) {
+                    // If disabling, also disable all cities in this group
+                    if (!newAvailability) {
+                        disableAllCitiesInGroup();
+                    }
+                    
+                    view.showSuccessMessage("City group " + (newAvailability ? "enabled" : "disabled") + " successfully!");
+                    loadGroupData(); // Reload data to refresh view
+                } else {
+                    view.showErrorMessage("Failed to update city group availability.");
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                view.showErrorMessage("Database error: " + e.getMessage());
+            }
+        }
+    }
+
+    private boolean updateCityGroupInDatabase(double fee, int time, boolean isAvailable) throws SQLException {
         try (Connection conn = DBConnection.getConnection()) {
-            String sql = "UPDATE City_Delivery_Groups SET city_delivery_fee = ?, city_delivery_time_minutes = ? WHERE city_delivery_group_id = ?";
+            String sql = "UPDATE City_Delivery_Groups SET city_delivery_fee = ?, city_delivery_time_minutes = ?, is_available = ? WHERE city_delivery_group_id = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setDouble(1, fee);
             ps.setInt(2, time);
-            ps.setInt(3, groupId);
+            ps.setBoolean(3, isAvailable);
+            ps.setInt(4, groupId);
             
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
+        }
+    }
+
+    private boolean toggleCityGroupAvailability(boolean newAvailability) throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            String sql = "UPDATE City_Delivery_Groups SET is_available = ? WHERE city_delivery_group_id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setBoolean(1, newAvailability);
+            ps.setInt(2, groupId);
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+        }
+    }
+
+    private void disableAllCitiesInGroup() throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            String sql = "UPDATE Cities SET is_available = 0 WHERE city_delivery_group_id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, groupId);
+            ps.executeUpdate();
         }
     }
 

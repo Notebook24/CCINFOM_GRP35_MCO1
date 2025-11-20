@@ -3,6 +3,7 @@ import java.awt.event.*;
 import java.sql.*;
 import java.util.*;
 import java.time.LocalTime;
+import java.awt.Color;
 
 public class CustomerCartPageController {
     private CustomerCartPageView view;
@@ -17,6 +18,7 @@ public class CustomerCartPageController {
         this.products = new ArrayList<>();
 
         loadCartProducts();
+        checkCityAvailability();
 
         view.getReturnButton().addActionListener(e -> {
             view.getFrame().dispose();
@@ -25,6 +27,11 @@ public class CustomerCartPageController {
         });
 
         view.getCheckOutButton().addActionListener(e -> {
+            if (!isCustomerCityAvailable()) {
+                JOptionPane.showMessageDialog(null, "We currently do not accommodate orders from your city. Please try again later.");
+                return;
+            }
+            
             int orderID = saveOrder();
             int flag = saverOrderLines(orderID);
 
@@ -38,6 +45,35 @@ public class CustomerCartPageController {
                 JOptionPane.showMessageDialog(null, "Error placing order. Please try again.");
             }
         });
+    }
+
+    private void checkCityAvailability() {
+        if (!isCustomerCityAvailable()) {
+            view.getCheckOutButton().setBackground(Color.GRAY);
+            view.getCheckOutButton().setToolTipText("Delivery not available in your area");
+        }
+    }
+
+    private boolean isCustomerCityAvailable() {
+        try (Connection conn = DBConnection.getConnection()) {
+            String sql = "SELECT ci.is_available, cdg.is_available as group_available " +
+                         "FROM Customers c " +
+                         "JOIN Cities ci ON c.city_id = ci.city_id " +
+                         "JOIN City_Delivery_Groups cdg ON ci.city_delivery_group_id = cdg.city_delivery_group_id " +
+                         "WHERE c.customer_id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            
+            if (rs.next()) {
+                boolean cityAvailable = rs.getBoolean("is_available");
+                boolean groupAvailable = rs.getBoolean("group_available");
+                return cityAvailable && groupAvailable;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     private void loadCartProducts() {
@@ -118,7 +154,7 @@ public class CustomerCartPageController {
                          "FROM Customers c " +
                          "JOIN Cities ci ON c.city_id = ci.city_id " +
                          "JOIN City_Delivery_Groups cdg ON ci.city_delivery_group_id = cdg.city_delivery_group_id " +
-                         "WHERE c.customer_id = ?";
+                         "WHERE c.customer_id = ? AND ci.is_available = 1 AND cdg.is_available = 1";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, customerId);
             ResultSet rs = ps.executeQuery();

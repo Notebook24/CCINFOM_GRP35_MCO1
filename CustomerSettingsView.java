@@ -12,7 +12,7 @@ public class CustomerSettingsView {
     private JFrame frame;
     private JPanel headerPanel, formPanel;
     private JButton logoutButton, changePasswordButton;
-    private JButton confirmButton, backButton, deactivateButton;
+    private JButton confirmButton, backButton, deleteButton;
     private JTextField firstNameField, lastNameField, emailField, addressField;
     private JLabel logoLabel, warningLabel;
 
@@ -67,19 +67,19 @@ public class CustomerSettingsView {
 
         confirmButton = new JButton("Confirm");
         backButton = new JButton("Back");
-        deactivateButton = new JButton("Deactivate Account");
-        deactivateButton.setForeground(Color.RED);
+        deleteButton = new JButton("Delete Account");
+        deleteButton.setForeground(Color.RED);
         
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
         buttonsPanel.add(confirmButton);
         buttonsPanel.add(backButton);
         formPanel.add(buttonsPanel);
         
-        // Add deactivate button separately with some spacing
+        // Add delete button separately with some spacing
         formPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-        JPanel deactivatePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        deactivatePanel.add(deactivateButton);
-        formPanel.add(deactivatePanel);
+        JPanel deletePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        deletePanel.add(deleteButton);
+        formPanel.add(deletePanel);
 
         frame.add(formPanel, BorderLayout.CENTER);
 
@@ -160,8 +160,8 @@ public class CustomerSettingsView {
         return changePasswordButton;
     }
 
-    public JButton getDeactivateButton(){
-        return deactivateButton;
+    public JButton getDeleteButton(){
+        return deleteButton;
     }
 
      public JTextField getFirstNameField(){

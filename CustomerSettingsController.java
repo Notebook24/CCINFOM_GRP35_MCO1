@@ -3,6 +3,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import javax.swing.JOptionPane;
 
 public class CustomerSettingsController {
@@ -59,11 +61,11 @@ public class CustomerSettingsController {
             }
         });
 
-        // Add deactivate button listener
-        customerSettingsView.getDeactivateButton().addActionListener(new ActionListener() {
+        // Add delete button listener
+        customerSettingsView.getDeleteButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
-                deactivateAccount();
+                deleteAccount();
             }
         });
     }
@@ -82,9 +84,9 @@ public class CustomerSettingsController {
                 customerSettingsView.getEmailField().setText(rs.getString("email"));
                 customerSettingsView.getAddressField().setText(rs.getString("address"));
             } else {
-                // Customer not found or already deactivated
+                // Customer not found or already deleted
                 JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
-                        "Customer account not found or has been deactivated.",
+                        "Customer account not found or has been deleted.",
                         "Error",
                         JOptionPane.ERROR_MESSAGE);
                 openLoginPage();
@@ -131,7 +133,7 @@ public class CustomerSettingsController {
                         JOptionPane.INFORMATION_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
-                        "Failed to update details. Account may be deactivated.",
+                        "Failed to update details. Account may be deleted.",
                         "Error",
                         JOptionPane.ERROR_MESSAGE);
             }
@@ -153,27 +155,27 @@ public class CustomerSettingsController {
         }
     }
 
-    private void deactivateAccount() {
-        // Check for active orders first - if any exist, prevent deactivation
+    private void deleteAccount() {
+        // Check for active orders first - if any exist, prevent deletion
         if (hasActiveOrders()) {
             JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
-                    "Cannot deactivate account while orders are being processed.\n\n" +
+                    "Cannot delete account while orders are being processed.\n\n" +
                     "Please wait until your current orders are delivered or cancelled\n" +
-                    "before deactivating your account.",
-                    "Deactivation Disabled",
+                    "before deleting your account.",
+                    "Deletion Disabled",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // Confirm with user before deactivation
+        // Confirm with user before deletion
         int confirm = JOptionPane.showConfirmDialog(
             customerSettingsView.getFrame(),
-            "Are you sure you want to deactivate your account?\n\n" +
+            "Are you sure you want to delete your account?\n\n" +
             "This will:\n" +
-            "• Set your email to null so it can be reused\n" +
+            "• Replace your email with a deleted identifier\n" +
             "• Make your account inactive\n\n" +
             "You will be logged out immediately.",
-            "Confirm Account Deactivation",
+            "Confirm Account Deletion",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE
         );
@@ -182,23 +184,28 @@ public class CustomerSettingsController {
             return;
         }
 
-        // Perform deactivation
+        // Perform deletion
         Connection conn = null;
         try {
             conn = DBConnection.getConnection();
             conn.setAutoCommit(false);
 
-            // Soft delete customer by setting is_active to 0 and email to null
-            String sql = "UPDATE customers SET is_active = 0, email = NULL WHERE customer_id = ?";
+            // Get current email to format the deleted email
+            String currentEmail = getCurrentEmail();
+            String deletedEmail = formatDeletedEmail(currentEmail);
+
+            // Soft delete customer by setting is_active to 0 and updating email
+            String sql = "UPDATE customers SET is_active = 0, email = ? WHERE customer_id = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setInt(1, customerId);
+                pstmt.setString(1, deletedEmail);
+                pstmt.setInt(2, customerId);
                 int rowsUpdated = pstmt.executeUpdate();
                 
                 if (rowsUpdated > 0) {
                     conn.commit();
                     JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
-                            "Account deactivated successfully. Thank you for using our service.",
-                            "Account Deactivated",
+                            "Account deleted successfully. Thank you for using our service.",
+                            "Account Deleted",
                             JOptionPane.INFORMATION_MESSAGE);
                     
                     // Log out and return to login page
@@ -206,7 +213,7 @@ public class CustomerSettingsController {
                 } else {
                     conn.rollback();
                     JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
-                            "Failed to deactivate account.",
+                            "Failed to delete account.",
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
                 }
@@ -219,7 +226,7 @@ public class CustomerSettingsController {
             }
             ex.printStackTrace();
             JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
-                    "An error occurred while deactivating your account.",
+                    "An error occurred while deleting your account.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         } finally {
@@ -232,6 +239,32 @@ public class CustomerSettingsController {
                 ex.printStackTrace();
             }
         }
+    }
+
+    private String getCurrentEmail() throws SQLException {
+        String sql = "SELECT email FROM customers WHERE customer_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, customerId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("email");
+            }
+        }
+        return "";
+    }
+
+    private String formatDeletedEmail(String originalEmail) {
+        // Extract the username part (before @)
+        String username = originalEmail.split("@")[0];
+        
+        // Get current timestamp
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm");
+        String timestamp = now.format(formatter);
+        
+        // Format: username_deleted_timestamp@gmail.com
+        return username + "_deleted_" + timestamp + "@gmail.com";
     }
 
     // Helper method to get city_id from Cities table

@@ -75,7 +75,6 @@ public class AdminAddCityGroupView {
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         frame.add(mainPanel);
-        frame.setVisible(true);
     }
 
     public void clearFields() {

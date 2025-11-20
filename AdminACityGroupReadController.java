@@ -55,7 +55,8 @@ public class AdminACityGroupReadController {
                 cityGroups.add(new CityGroup(
                     rs.getInt("city_delivery_group_id"),
                     rs.getDouble("city_delivery_fee"),
-                    rs.getInt("city_delivery_time_minutes")
+                    rs.getInt("city_delivery_time_minutes"),
+                    rs.getBoolean("is_available")
                 ));
             }
 
@@ -92,17 +93,6 @@ public class AdminACityGroupReadController {
                 }
             });
         }
-
-        // Set up listeners for dynamic delete buttons
-        for (int i = 0; i < view.getDeleteButtons().size(); i++) {
-            final int groupIndex = i;
-            view.getDeleteButtons().get(i).addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    handleDeleteCityGroup(groupIndex);
-                }
-            });
-        }
     }
 
     // ADDED method to handle back navigation
@@ -116,7 +106,6 @@ public class AdminACityGroupReadController {
         view.getFrame().dispose();
         AdminAddCityGroupView addView = new AdminAddCityGroupView();
         new AdminAddCityGroupController(addView, adminId);
-        addView.getFrame().setVisible(true);
     }
 
     private void handleViewCities(int groupIndex) {
@@ -136,38 +125,6 @@ public class AdminACityGroupReadController {
             AdminACityGroupUpdateView updateView = new AdminACityGroupUpdateView();
             new AdminACityGroupUpdateController(updateView, group.getId(), adminId);
             updateView.getFrame().setVisible(true);
-        }
-    }
-
-    private void handleDeleteCityGroup(int groupIndex) {
-        if (groupIndex >= 0 && groupIndex < cityGroups.size()) {
-            CityGroup groupToDelete = cityGroups.get(groupIndex);
-            
-            int response = view.showDeleteConfirmation(groupToDelete.toString());
-            
-            if (response == JOptionPane.YES_OPTION) {
-                if (deleteCityGroup(groupToDelete.getId())) {
-                    view.showSuccessMessage("City group deleted successfully!");
-                    refreshCityGroups();
-                } else {
-                    view.showErrorMessage("Error deleting city group. It may have cities associated with it.");
-                }
-            }
-        }
-    }
-
-    private boolean deleteCityGroup(int groupId) {
-        try (Connection conn = DBConnection.getConnection()) {
-            String deleteSql = "DELETE FROM City_Delivery_Groups WHERE city_delivery_group_id = ?";
-            PreparedStatement deletePs = conn.prepareStatement(deleteSql);
-            deletePs.setInt(1, groupId);
-            
-            int rowsAffected = deletePs.executeUpdate();
-            return rowsAffected > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
         }
     }
 

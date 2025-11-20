@@ -1,7 +1,7 @@
 CREATE DATABASE IF NOT EXISTS S20_GROUP3_Database;
 
 USE S20_GROUP3_Database;
-
+SELECT * FROM cities;
 CREATE TABLE Menu_Category (
     menu_category_id INT AUTO_INCREMENT PRIMARY KEY,
     menu_category_name VARCHAR(50) NOT NULL,
@@ -17,6 +17,7 @@ CREATE TABLE City_Delivery_Groups (
     city_delivery_group_id INT AUTO_INCREMENT PRIMARY KEY,
     city_delivery_fee DECIMAL(10,2) NOT NULL CHECK (city_delivery_fee >= 0),
     city_delivery_time_minutes INT NOT NULL,
+    is_available TINYINT(1) DEFAULT 1 NOT NULL,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
 );
@@ -25,6 +26,7 @@ CREATE TABLE Cities (
     city_id INT AUTO_INCREMENT PRIMARY KEY,
     city_name VARCHAR(50) NOT NULL UNIQUE,
     city_delivery_group_id INT NOT NULL,
+    is_available TINYINT(1) DEFAULT 1 NOT NULL,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (city_delivery_group_id) REFERENCES City_Delivery_Groups(city_delivery_group_id)

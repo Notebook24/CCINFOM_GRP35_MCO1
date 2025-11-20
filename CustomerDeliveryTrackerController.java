@@ -6,6 +6,9 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class CustomerDeliveryTrackerController {
 
@@ -13,6 +16,36 @@ public class CustomerDeliveryTrackerController {
     private int customerId;
     private Map<Integer, Timer> orderTimers = new HashMap<>();
     private static final ZoneId PH_ZONE = ZoneId.of("Asia/Manila");
+    
+    // Background scheduler for updating order statuses
+    private static ScheduledExecutorService statusUpdateScheduler;
+    private static final Map<Integer, OrderTrackingInfo> trackedOrders = new HashMap<>();
+
+    static {
+        // Initialize the background scheduler
+        statusUpdateScheduler = Executors.newScheduledThreadPool(1);
+        statusUpdateScheduler.scheduleAtFixedRate(() -> updateAllOrderStatuses(), 0, 30, TimeUnit.SECONDS);
+    }
+
+    // Inner class to track order information for background updates
+    private static class OrderTrackingInfo {
+        int orderId;
+        String prepTimeStr;
+        String deliveryTimeStr;
+        String currentStatus;
+        Timestamp paymentTimestamp;
+        boolean isPaid;
+        
+        OrderTrackingInfo(int orderId, String prepTimeStr, String deliveryTimeStr, 
+                         String currentStatus, Timestamp paymentTimestamp, boolean isPaid) {
+            this.orderId = orderId;
+            this.prepTimeStr = prepTimeStr;
+            this.deliveryTimeStr = deliveryTimeStr;
+            this.currentStatus = currentStatus;
+            this.paymentTimestamp = paymentTimestamp;
+            this.isPaid = isPaid;
+        }
+    }
 
     public CustomerDeliveryTrackerController(CustomerDeliveryTrackerView view, int customerId) {
         this.view = view;
@@ -153,13 +186,14 @@ public class CustomerDeliveryTrackerController {
                 double deliveryFee = getDeliveryFee(orderId);
                 double totalPrice = subtotal + deliveryFee;
 
-                // CRITICAL FIX: If order is paid and still shows as Pending, update it to Preparing
-                String actualStatus = status;
-                if ("Pending".equals(status) && isPaid) {
-                    actualStatus = "Preparing";
-                    // Update the database immediately
-                    updateOrderStatus(orderId, "Preparing");
-                }
+                // Get payment timestamp for background tracking
+                Timestamp paymentTimestamp = getPaymentDate(orderId);
+                
+                // Register order for background status updates
+                registerOrderForBackgroundUpdates(orderId, prepTimeStr, deliveryTimeStr, status, paymentTimestamp, isPaid);
+
+                // CRITICAL FIX: Calculate actual status based on payment time and elapsed time
+                String actualStatus = calculateCurrentStatus(orderId, status, isPaid, prepTimeStr, deliveryTimeStr);
 
                 // Only create a row for the order
                 CustomerDeliveryTrackerView.OrderRow row = view.addOrderRow();
@@ -173,6 +207,96 @@ public class CustomerDeliveryTrackerController {
 
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    // NEW METHOD: Register order for background status updates
+    private void registerOrderForBackgroundUpdates(int orderId, String prepTimeStr, String deliveryTimeStr, 
+                                                 String currentStatus, Timestamp paymentTimestamp, boolean isPaid) {
+        trackedOrders.put(orderId, new OrderTrackingInfo(orderId, prepTimeStr, deliveryTimeStr, 
+                                                        currentStatus, paymentTimestamp, isPaid));
+    }
+
+    // NEW METHOD: Background task to update all order statuses
+    private static void updateAllOrderStatuses() {
+        if (trackedOrders.isEmpty()) {
+            return;
+        }
+
+        System.out.println("DEBUG: Running background order status update for " + trackedOrders.size() + " orders");
+        
+        for (OrderTrackingInfo orderInfo : trackedOrders.values()) {
+            try {
+                // Skip if order is in final state
+                if ("Delivered".equals(orderInfo.currentStatus) || "Cancelled".equals(orderInfo.currentStatus)) {
+                    continue;
+                }
+
+                // Skip if not paid
+                if (!orderInfo.isPaid || orderInfo.paymentTimestamp == null) {
+                    continue;
+                }
+
+                // Calculate what the status should be
+                String calculatedStatus = calculateBackgroundStatus(orderInfo);
+                
+                // Update database if status changed
+                if (!calculatedStatus.equals(orderInfo.currentStatus)) {
+                    updateOrderStatusInDatabase(orderInfo.orderId, calculatedStatus);
+                    orderInfo.currentStatus = calculatedStatus;
+                    System.out.println("DEBUG: Background update - Order " + orderInfo.orderId + " -> " + calculatedStatus);
+                    
+                    // Notify admin report
+                    notifyAdminReport();
+                }
+            } catch (Exception e) {
+                System.err.println("Error updating order " + orderInfo.orderId + " in background: " + e.getMessage());
+            }
+        }
+    }
+
+    // NEW METHOD: Calculate status for background updates
+    private static String calculateBackgroundStatus(OrderTrackingInfo orderInfo) {
+        if (!orderInfo.isPaid || orderInfo.paymentTimestamp == null) {
+            return orderInfo.currentStatus;
+        }
+
+        // Parse time strings to seconds
+        long prepSeconds = parseTimeToSeconds(orderInfo.prepTimeStr);
+        long deliverySeconds = parseTimeToSeconds(orderInfo.deliveryTimeStr);
+        long totalSeconds = prepSeconds + deliverySeconds;
+
+        // Convert payment timestamp to PH timezone
+        Instant paymentInstant = orderInfo.paymentTimestamp.toInstant()
+                            .atZone(ZoneId.of("UTC"))
+                            .withZoneSameLocal(ZoneId.of("Asia/Manila"))
+                            .toInstant();
+        Instant nowInstant = Instant.now();
+        
+        // Calculate elapsed time since payment was made
+        long elapsedSeconds = Duration.between(paymentInstant, nowInstant).getSeconds();
+
+        // Determine status based on elapsed time
+        if (elapsedSeconds <= prepSeconds) {
+            return "Preparing";
+        } else if (elapsedSeconds <= totalSeconds) {
+            return "In Transit";
+        } else {
+            return "Delivered";
+        }
+    }
+
+    // NEW METHOD: Update database status if needed
+    private void updateStatusIfNeeded(int orderId, String calculatedStatus, String currentStatus) {
+        if (!calculatedStatus.equals(currentStatus)) {
+            System.out.println("DEBUG: Updating order " + orderId + " from " + currentStatus + " to " + calculatedStatus);
+            updateOrderStatusInDatabase(orderId, calculatedStatus);
+            
+            // Update the tracked order's current status
+            OrderTrackingInfo orderInfo = trackedOrders.get(orderId);
+            if (orderInfo != null) {
+                orderInfo.currentStatus = calculatedStatus;
+            }
         }
     }
 
@@ -230,17 +354,33 @@ public class CustomerDeliveryTrackerController {
         return null;
     }
 
-    private void updateOrderStatus(int orderId, String newStatus) {
+    // UPDATED METHOD: Update order status in database
+    private static void updateOrderStatusInDatabase(int orderId, String newStatus) {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(
                      "UPDATE Orders SET status = ? WHERE order_id = ?")) {
             
             ps.setString(1, newStatus);
             ps.setInt(2, orderId);
-            ps.executeUpdate();
+            int rowsUpdated = ps.executeUpdate();
+            
+            System.out.println("DEBUG: Updated order " + orderId + " to " + newStatus + " (" + rowsUpdated + " rows affected)");
             
         } catch (SQLException ex) {
             ex.printStackTrace();
+        }
+    }
+
+    // FIXED METHOD: Notify Admin Order Report to refresh
+    private static void notifyAdminReport() {
+        try {
+            // Use the enhanced notification system
+            if (AdminOrderReportController.getInstance() != null) {
+                AdminOrderReportController.getInstance().forceRefresh();
+            }
+        } catch (Exception e) {
+            // If admin report isn't open, just ignore - the 5-second refresh will catch it
+            System.out.println("Admin report not open, changes will show on next auto-refresh");
         }
     }
 
@@ -281,7 +421,14 @@ public class CustomerDeliveryTrackerController {
         row.cancelButton.setOpaque(true);
         row.cancelButton.setEnabled(true);
 
-        switch (status) {
+        // Update database if status needs to be changed
+        String calculatedStatus = calculateCurrentStatus(orderId, status, isPaid, prepTimeStr, deliveryTimeStr);
+        updateStatusIfNeeded(orderId, calculatedStatus, status);
+        
+        // Use the calculated status for display
+        String displayStatus = calculatedStatus;
+
+        switch (displayStatus) {
             case "Pending":
                 row.statusLabel.setText("PENDING");
                 row.statusLabel.setForeground(Color.RED);
@@ -295,7 +442,6 @@ public class CustomerDeliveryTrackerController {
                 row.cancelButton.setForeground(Color.WHITE);
                 row.cancelButton.addActionListener(e -> cancelOrder(orderId, row));
                 
-                // FIX: No timer for pending orders
                 row.timeLabel.setText("--:--:--");
                 break;
 
@@ -312,9 +458,8 @@ public class CustomerDeliveryTrackerController {
                 row.cancelButton.setForeground(Color.WHITE);
                 row.cancelButton.addActionListener(e -> cancelOrder(orderId, row));
                 
-                // FIX: Only start timer for paid orders that are actually preparing
                 if (isPaid) {
-                    startPrepTimer(row, orderId, prepTimeStr);
+                    startCountdownTimer(row, orderId, prepTimeStr, deliveryTimeStr, displayStatus);
                 } else {
                     row.timeLabel.setText("--:--:--");
                 }
@@ -326,15 +471,19 @@ public class CustomerDeliveryTrackerController {
                 row.actionButton.setText("View Receipt");
                 row.actionButton.setBackground(new Color(0, 150, 0)); // Green
                 row.actionButton.setForeground(Color.WHITE);
-                row.actionButton.setEnabled(true); // Enabled
-                row.actionButton.addActionListener(e -> viewReceipt(orderId)); // FIXED: Now opens receipt
+                row.actionButton.setEnabled(true);
+                row.actionButton.addActionListener(e -> viewReceipt(orderId));
                 
                 row.cancelButton.setText("Cancel Order");
                 row.cancelButton.setBackground(Color.GRAY);
                 row.cancelButton.setForeground(Color.WHITE);
                 row.cancelButton.setEnabled(false);
                 
-                startDeliveryTimer(row, orderId, prepTimeStr, deliveryTimeStr);
+                if (isPaid) {
+                    startCountdownTimer(row, orderId, prepTimeStr, deliveryTimeStr, displayStatus);
+                } else {
+                    row.timeLabel.setText("--:--:--");
+                }
                 break;
 
             case "Delivered":
@@ -367,108 +516,44 @@ public class CustomerDeliveryTrackerController {
                 row.cancelButton.setBackground(Color.GRAY);
                 row.cancelButton.setForeground(Color.WHITE);
                 row.cancelButton.setEnabled(false);
+                
+                // Remove from background tracking when cancelled
+                trackedOrders.remove(orderId);
                 break;
         }
     }
 
-    private void startPrepTimer(CustomerDeliveryTrackerView.OrderRow row,
-                               int orderId,
-                               String prepTimeStr) {
-        
-        // Parse the preparation time to seconds
-        long totalPrepSeconds = parseTimeToSeconds(prepTimeStr);
-        
-        // Get the payment date instead of order date
-        Timestamp paymentTimestamp = getPaymentDate(orderId);
-        
-        if (paymentTimestamp == null) {
-            // No payment date found, don't start timer
-            row.timeLabel.setText("--:--:--");
-            return;
-        }
-        
-        // Convert payment timestamp to PH timezone
-        Instant paymentInstant = paymentTimestamp.toInstant()
-                            .atZone(ZoneId.of("UTC"))
-                            .withZoneSameLocal(PH_ZONE)
-                            .toInstant();
-        Instant nowInstant = Instant.now();
-        
-        // Calculate elapsed time since payment was made
-        long elapsedSeconds = Duration.between(paymentInstant, nowInstant).getSeconds();
-        
-        // Calculate remaining time
-        long remainingSeconds = totalPrepSeconds - elapsedSeconds;
-        
-        // If preparation time has already passed, move to next status
-        if (remainingSeconds <= 0) {
-            updateOrderStatus(orderId, "In Transit", row);
-            return;
-        }
-
-        // Calculate the actual end time as Instant (based on payment time)
-        Instant endInstant = paymentInstant.plusSeconds(totalPrepSeconds);
-
-        Timer timer = new Timer(1000, e -> {
-            long secondsLeft = Duration.between(Instant.now(), endInstant).getSeconds();
-
-            if (secondsLeft <= 0) {
-                ((Timer) e.getSource()).stop();
-                orderTimers.remove(orderId);
-                updateOrderStatus(orderId, "In Transit", row);
-            } else {
-                row.timeLabel.setText(formatTime(secondsLeft));
-            }
-        });
-
-        // Show initial time
-        row.timeLabel.setText(formatTime(remainingSeconds));
-        timer.start();
-        orderTimers.put(orderId, timer);
-    }
-
-    private void startDeliveryTimer(CustomerDeliveryTrackerView.OrderRow row,
+    // NEW METHOD: Start countdown timer that shows remaining time
+    private void startCountdownTimer(CustomerDeliveryTrackerView.OrderRow row,
                                    int orderId,
                                    String prepTimeStr,
-                                   String deliveryTimeStr) {
+                                   String deliveryTimeStr,
+                                   String currentStatus) {
         
-        // Parse both time strings to seconds
-        long totalPrepSeconds = parseTimeToSeconds(prepTimeStr);
-        long totalDeliverySeconds = parseTimeToSeconds(deliveryTimeStr);
-        
-        // Calculate total time
-        long totalSeconds = totalPrepSeconds + totalDeliverySeconds;
-        
-        // Get the payment date instead of order date
         Timestamp paymentTimestamp = getPaymentDate(orderId);
-        
         if (paymentTimestamp == null) {
-            // No payment date found, don't start timer
             row.timeLabel.setText("--:--:--");
             return;
         }
-        
+
+        // Parse time strings to seconds
+        long prepSeconds = parseTimeToSeconds(prepTimeStr);
+        long deliverySeconds = parseTimeToSeconds(deliveryTimeStr);
+        long totalSeconds = prepSeconds + deliverySeconds;
+
         // Convert payment timestamp to PH timezone
         Instant paymentInstant = paymentTimestamp.toInstant()
                             .atZone(ZoneId.of("UTC"))
                             .withZoneSameLocal(PH_ZONE)
                             .toInstant();
-        Instant nowInstant = Instant.now();
         
-        // Calculate elapsed time since payment was made
-        long elapsedSeconds = Duration.between(paymentInstant, nowInstant).getSeconds();
-        
-        // Calculate remaining time
-        long remainingSeconds = totalSeconds - elapsedSeconds;
-        
-        // If delivery time has already passed, mark as delivered
-        if (remainingSeconds <= 0) {
-            updateOrderStatus(orderId, "Delivered", row);
-            return;
+        // Calculate end time based on current status
+        Instant endInstant;
+        if ("Preparing".equals(currentStatus)) {
+            endInstant = paymentInstant.plusSeconds(prepSeconds);
+        } else { // "In Transit"
+            endInstant = paymentInstant.plusSeconds(totalSeconds);
         }
-
-        // Calculate the actual end time as Instant (based on payment time)
-        Instant endInstant = paymentInstant.plusSeconds(totalSeconds);
 
         Timer timer = new Timer(1000, e -> {
             long secondsLeft = Duration.between(Instant.now(), endInstant).getSeconds();
@@ -476,20 +561,26 @@ public class CustomerDeliveryTrackerController {
             if (secondsLeft <= 0) {
                 ((Timer) e.getSource()).stop();
                 orderTimers.remove(orderId);
-                updateOrderStatus(orderId, "Delivered", row);
+                // Reload the page to get updated status
+                loadOrders();
             } else {
                 row.timeLabel.setText(formatTime(secondsLeft));
             }
         });
 
         // Show initial time
-        row.timeLabel.setText(formatTime(remainingSeconds));
-        timer.start();
-        orderTimers.put(orderId, timer);
+        long initialSecondsLeft = Duration.between(Instant.now(), endInstant).getSeconds();
+        if (initialSecondsLeft > 0) {
+            row.timeLabel.setText(formatTime(initialSecondsLeft));
+            timer.start();
+            orderTimers.put(orderId, timer);
+        } else {
+            row.timeLabel.setText("--:--:--");
+        }
     }
 
     // Parse time string (HH:MM:SS) to total seconds
-    private long parseTimeToSeconds(String timeStr) {
+    private static long parseTimeToSeconds(String timeStr) {
         try {
             String[] parts = timeStr.split(":");
             long hours = Long.parseLong(parts[0]);
@@ -503,95 +594,9 @@ public class CustomerDeliveryTrackerController {
         }
     }
 
-    private void updateOrderStatus(int orderId, String newStatus, CustomerDeliveryTrackerView.OrderRow row) {
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "UPDATE Orders SET status = ? WHERE order_id = ?")) {
-            
-            ps.setString(1, newStatus);
-            ps.setInt(2, orderId);
-            ps.executeUpdate();
-
-            // Update UI based on new status
-            switch (newStatus) {
-                case "In Transit":
-                    row.timeLabel.setForeground(new Color(255, 150, 0));
-                    row.statusLabel.setText("IN TRANSIT");
-                    row.statusLabel.setForeground(new Color(255, 150, 0));
-                    row.actionButton.setText("View Receipt");
-                    row.actionButton.setBackground(new Color(0, 150, 0)); // FIXED: Green instead of Gray
-                    row.actionButton.setForeground(Color.WHITE);
-                    row.actionButton.setEnabled(true); // FIXED: Enabled instead of disabled
-                    
-                    // Clear existing listeners and add the correct one
-                    for (ActionListener al : row.actionButton.getActionListeners()) {
-                        row.actionButton.removeActionListener(al);
-                    }
-                    row.actionButton.addActionListener(e -> viewReceipt(orderId)); // FIXED: view receipt
-                    
-                    row.cancelButton.setText("Cancel Order");
-                    row.cancelButton.setBackground(Color.GRAY);
-                    row.cancelButton.setForeground(Color.WHITE);
-                    row.cancelButton.setEnabled(false);
-                    
-                    // Restart timer for delivery phase
-                    restartDeliveryTimer(orderId, row);
-                    break;
-                    
-                case "Delivered":
-                    row.timeLabel.setForeground(new Color(0, 100, 0));
-                    row.statusLabel.setText("DELIVERED");
-                    row.statusLabel.setForeground(new Color(0, 130, 0));
-                    row.timeLabel.setText("Finished!");
-                    row.actionButton.setText("View Receipt");
-                    row.actionButton.setBackground(new Color(0, 150, 0));
-                    row.actionButton.setForeground(Color.WHITE);
-                    row.actionButton.setEnabled(true);
-                    
-                    row.cancelButton.setText("Cancel Order");
-                    row.cancelButton.setBackground(Color.GRAY);
-                    row.cancelButton.setForeground(Color.WHITE);
-                    row.cancelButton.setEnabled(false);
-                    
-                    // Clear existing listeners and add new one
-                    for (ActionListener al : row.actionButton.getActionListeners()) {
-                        row.actionButton.removeActionListener(al);
-                    }
-                    row.actionButton.addActionListener(e -> viewReceipt(orderId));
-                    break;
-            }
-            
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void restartDeliveryTimer(int orderId, CustomerDeliveryTrackerView.OrderRow row) {
-        String sql = "SELECT o.delivery_time, o.preparation_time " +
-                     "FROM Orders o WHERE o.order_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            
-            ps.setInt(1, orderId);
-            ResultSet rs = ps.executeQuery();
-            
-            if (rs.next()) {
-                String deliveryTimeStr = rs.getTime("delivery_time").toString();
-                String prepTimeStr = rs.getTime("preparation_time").toString();
-                
-                startDeliveryTimer(row, orderId, prepTimeStr, deliveryTimeStr);
-            }
-            
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     // Button action methods
     private void openPaymentPage(int orderId) {
-        JOptionPane.showMessageDialog(view.getFrame(), "Payments page coming soon!"); //PLACE PAYMENTS PAGE HERE
-        
-        //view.getFrame().dispose(); UNCOMMENT IF ALREADY CONNECTED TO PAYMENTS PAGE
+        JOptionPane.showMessageDialog(view.getFrame(), "Payments page coming soon!");
     }
 
     private void cancelOrder(int orderId, CustomerDeliveryTrackerView.OrderRow row) {
@@ -604,7 +609,11 @@ public class CustomerDeliveryTrackerController {
                          "UPDATE Orders SET status = 'Cancelled' WHERE order_id = ?")) {
                 
                 ps.setInt(1, orderId);
-                ps.executeUpdate();
+                int rowsUpdated = ps.executeUpdate();
+                System.out.println("DEBUG: Cancelled order " + orderId + " (" + rowsUpdated + " rows affected)");
+
+                // NOTIFY ADMIN REPORT
+                notifyAdminReport();
 
                 // Stop timer
                 Timer timer = orderTimers.get(orderId);
@@ -613,12 +622,14 @@ public class CustomerDeliveryTrackerController {
                     orderTimers.remove(orderId);
                 }
 
-                // Update UI - KEEP "View Payments" button for cancelled orders
+                // Remove from background tracking
+                trackedOrders.remove(orderId);
+
+                // Update UI
                 row.statusLabel.setText("CANCELLED");
                 row.statusLabel.setForeground(Color.RED);
                 row.timeLabel.setText("--:--:--");
                 
-                // FIX: Keep "View Payments" button instead of disabling it
                 row.actionButton.setText("View Payments");
                 row.actionButton.setBackground(Color.ORANGE);
                 row.actionButton.setForeground(Color.WHITE);
@@ -679,5 +690,42 @@ public class CustomerDeliveryTrackerController {
         long minutes = (totalSeconds % 3600) / 60;
         long seconds = totalSeconds % 60;
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+
+    // NEW METHOD: Calculate current status based on payment time and elapsed time
+    private String calculateCurrentStatus(int orderId, String currentStatus, boolean isPaid, String prepTimeStr, String deliveryTimeStr) {
+        // If not paid or already in final state, return current status
+        if (!isPaid || "Delivered".equals(currentStatus) || "Cancelled".equals(currentStatus)) {
+            return currentStatus;
+        }
+
+        Timestamp paymentTimestamp = getPaymentDate(orderId);
+        if (paymentTimestamp == null) {
+            return currentStatus;
+        }
+
+        // Parse time strings to seconds
+        long prepSeconds = parseTimeToSeconds(prepTimeStr);
+        long deliverySeconds = parseTimeToSeconds(deliveryTimeStr);
+        long totalSeconds = prepSeconds + deliverySeconds;
+
+        // Convert payment timestamp to PH timezone
+        Instant paymentInstant = paymentTimestamp.toInstant()
+                            .atZone(ZoneId.of("UTC"))
+                            .withZoneSameLocal(PH_ZONE)
+                            .toInstant();
+        Instant nowInstant = Instant.now();
+        
+        // Calculate elapsed time since payment was made
+        long elapsedSeconds = Duration.between(paymentInstant, nowInstant).getSeconds();
+
+        // Determine status based on elapsed time
+        if (elapsedSeconds <= prepSeconds) {
+            return "Preparing";
+        } else if (elapsedSeconds <= totalSeconds) {
+            return "In Transit";
+        } else {
+            return "Delivered";
+        }
     }
 }

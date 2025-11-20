@@ -14,14 +14,12 @@ public class AdminACityGroupReadView {
     // Store references to dynamic buttons
     private List<JButton> viewButtons;
     private List<JButton> updateButtons;
-    private List<JButton> deleteButtons;
     private List<CityGroup> currentGroups;
     
     public AdminACityGroupReadView() {
         initializeUI();
         viewButtons = new ArrayList<>();
         updateButtons = new ArrayList<>();
-        deleteButtons = new ArrayList<>();
         currentGroups = new ArrayList<>();
     }
     
@@ -86,7 +84,6 @@ public class AdminACityGroupReadView {
         contentPanel.removeAll();
         viewButtons.clear();
         updateButtons.clear();
-        deleteButtons.clear();
         currentGroups.clear();
         currentGroups.addAll(cityGroups);
         
@@ -127,10 +124,9 @@ public class AdminACityGroupReadView {
         
         JButton viewButton = new JButton("View Cities");
         JButton updateButton = new JButton("Update");
-        JButton deleteButton = new JButton("Delete");
         
         // Style buttons
-        JButton[] buttons = {viewButton, updateButton, deleteButton};
+        JButton[] buttons = {viewButton, updateButton};
         for (JButton btn : buttons) {
             btn.setFont(new Font("SansSerif", Font.PLAIN, 14));
             btn.setBackground(Color.LIGHT_GRAY);
@@ -138,12 +134,9 @@ public class AdminACityGroupReadView {
             btn.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         }
         
-        // Make delete button red
-        deleteButton.setBackground(new Color(255, 150, 150));
         
         buttonsPanel.add(viewButton);
         buttonsPanel.add(updateButton);
-        buttonsPanel.add(deleteButton);
         
         panel.add(infoLabel, BorderLayout.WEST);
         panel.add(buttonsPanel, BorderLayout.EAST);
@@ -151,7 +144,6 @@ public class AdminACityGroupReadView {
         // Store buttons for controller access
         viewButtons.add(viewButton);
         updateButtons.add(updateButton);
-        deleteButtons.add(deleteButton);
         
         return panel;
     }
@@ -163,18 +155,7 @@ public class AdminACityGroupReadView {
     public void showErrorMessage(String message) {
         JOptionPane.showMessageDialog(frame, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
-    
-    public int showDeleteConfirmation(String groupInfo) {
-        return JOptionPane.showConfirmDialog(
-            frame,
-            "Are you sure to delete this group?\n" + groupInfo + 
-            "\n\nAll cities under this group will be deleted as well.",
-            "Confirm Delete",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE
-        );
-    }
-    
+
     // Getters for all buttons
     public JFrame getFrame() { 
         return frame; 
@@ -195,10 +176,6 @@ public class AdminACityGroupReadView {
     
     public List<JButton> getUpdateButtons() {
         return updateButtons;
-    }
-    
-    public List<JButton> getDeleteButtons() {
-        return deleteButtons;
     }
     
     public List<CityGroup> getCurrentGroups() {
