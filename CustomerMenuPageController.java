@@ -137,8 +137,9 @@ public class CustomerMenuPageController {
 
         // Payments button - show message (can be implemented later)
         view.getPaymentsButton().addActionListener(e -> {
-            JOptionPane.showMessageDialog(view.getFrame(), 
-                "Payments functionality coming soon!");
+            view.getFrame().dispose();
+            CustomerPaymentTrackerView view = new CustomerPaymentTrackerView();
+            new CustomerPaymentTrackerController(view, customerId);
         });
 
         // Orders button - go to order tracking page

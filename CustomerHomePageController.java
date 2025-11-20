@@ -23,8 +23,9 @@ public class CustomerHomePageController {
 
         // Payments button - show message (can be implemented later)
         customerHomePageView.paymentsButton.addActionListener(e -> {
-            JOptionPane.showMessageDialog(customerHomePageView.getFrame(), 
-                "Payments functionality coming soon!");
+            customerHomePageView.getFrame().dispose();
+            CustomerPaymentTrackerView view = new CustomerPaymentTrackerView();
+            new CustomerPaymentTrackerController(view, customerId);
         });
 
         // Orders button - go to order tracking page

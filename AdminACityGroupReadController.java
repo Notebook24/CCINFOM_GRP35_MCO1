@@ -106,6 +106,7 @@ public class AdminACityGroupReadController {
         view.getFrame().dispose();
         AdminAddCityGroupView addView = new AdminAddCityGroupView();
         new AdminAddCityGroupController(addView, adminId);
+        addView.getFrame().setVisible(true);
     }
 
     private void handleViewCities(int groupIndex) {

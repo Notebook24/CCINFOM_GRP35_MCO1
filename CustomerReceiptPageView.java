@@ -107,7 +107,6 @@ public class CustomerReceiptPageView {
     }
 
     public void addReceiptRow(String name, String value) {
-
         JPanel row = new JPanel(new BorderLayout());
         row.setBackground(Color.WHITE);
 
@@ -117,13 +116,32 @@ public class CustomerReceiptPageView {
 
         boolean bold = name.equalsIgnoreCase("Total")
                 || name.equalsIgnoreCase("Amount Paid")
-                || name.equalsIgnoreCase("Change");
+                || name.equalsIgnoreCase("Change")
+                || name.equalsIgnoreCase("Final Amount");
+
+        boolean isRefunded = name.equalsIgnoreCase("REFUNDED");
+        boolean isFinalAmount = name.equalsIgnoreCase("Final Amount");
 
         JLabel left = new JLabel(name);
-        left.setFont(new Font("SansSerif", bold ? Font.BOLD : Font.PLAIN, 20));
+        if (isRefunded) {
+            left.setFont(new Font("SansSerif", Font.BOLD, 20));
+            left.setForeground(Color.RED);
+        } else {
+            left.setFont(new Font("SansSerif", bold ? Font.BOLD : Font.PLAIN, 20));
+            left.setForeground(Color.BLACK);
+        }
 
         JLabel right = new JLabel(value);
-        right.setFont(new Font("SansSerif", bold ? Font.BOLD : Font.PLAIN, 20));
+        if (isRefunded) {
+            right.setFont(new Font("SansSerif", Font.BOLD, 20));
+            right.setForeground(Color.RED);
+        } else if (isFinalAmount) {
+            right.setFont(new Font("SansSerif", Font.BOLD, 22));
+            right.setForeground(new Color(0, 130, 0));
+        } else {
+            right.setFont(new Font("SansSerif", bold ? Font.BOLD : Font.PLAIN, 20));
+            right.setForeground(Color.BLACK);
+        }
         right.setHorizontalAlignment(SwingConstants.RIGHT);
 
         JPanel rightWrapper = new JPanel(new BorderLayout());
@@ -134,12 +152,12 @@ public class CustomerReceiptPageView {
         row.add(rightWrapper, BorderLayout.CENTER);
 
         rowsPanel.add(row);
-        addSeparator();
+        
+        if (!isRefunded) {
+            addSeparator();
+        }
     }
 
-    /* ===========================
-       SEPARATOR
-    ============================== */
     private void addSeparator() {
         JPanel sepContainer = new JPanel(new BorderLayout());
         sepContainer.setBackground(Color.WHITE);
@@ -153,5 +171,28 @@ public class CustomerReceiptPageView {
 
         sepContainer.add(sep, BorderLayout.CENTER);
         rowsPanel.add(sepContainer);
+    }
+
+    public void clearReceiptRows() {
+        rowsPanel.removeAll();
+        rowsPanel.revalidate();
+        rowsPanel.repaint();
+    }
+
+    public void addRefundMessage() {
+        JPanel refundPanel = new JPanel(new BorderLayout());
+        refundPanel.setBackground(new Color(255, 240, 240));
+        refundPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        refundPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+
+        JLabel refundLabel = new JLabel("ORDER CANCELLED - FULL REFUND ISSUED", JLabel.CENTER);
+        refundLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
+        refundLabel.setForeground(Color.RED);
+        
+        refundPanel.add(refundLabel, BorderLayout.CENTER);
+        
+        // Add the refund message at the top of the receipt
+        rowsPanel.add(refundPanel, 0);
+        addSeparator();
     }
 }

@@ -30,7 +30,7 @@ public class AdminOrderReportView {
         // Frame setup
         frame = new JFrame("Order Report");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1200, 700);
+        frame.setSize(1250, 700);
         frame.setLocationRelativeTo(null);
 
         // Main panel with scroll
@@ -61,21 +61,21 @@ public class AdminOrderReportView {
         ordersTable = new JTable();
         ordersTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         JScrollPane ordersScroll = new JScrollPane(ordersTable);
-        ordersScroll.setPreferredSize(new Dimension(1100, 200));
+        ordersScroll.setPreferredSize(new Dimension(1100, 150));
         tabbedPane.addTab("Order Details", ordersScroll);
         
         // Customers table
         customersTable = new JTable();
         customersTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         JScrollPane customersScroll = new JScrollPane(customersTable);
-        customersScroll.setPreferredSize(new Dimension(1100, 200));
+        customersScroll.setPreferredSize(new Dimension(1100, 150));
         tabbedPane.addTab("Customer Orders", customersScroll);
         
         // Cities table
         citiesTable = new JTable();
         citiesTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         JScrollPane citiesScroll = new JScrollPane(citiesTable);
-        citiesScroll.setPreferredSize(new Dimension(1100, 200));
+        citiesScroll.setPreferredSize(new Dimension(1100, 150));
         tabbedPane.addTab("City Orders", citiesScroll);
         
         mainPanel.add(tabbedPane);
@@ -85,18 +85,20 @@ public class AdminOrderReportView {
 
     private void createHeaderPanel() {
         headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         headerPanel.setBackground(new Color(220, 0, 0));
+        headerPanel.setPreferredSize(new Dimension(1200, 40));
 
         // Back button
         backButton = new JButton("Back to Home");
         backButton.setBackground(Color.WHITE);
         backButton.setForeground(new Color(220, 0, 0));
         backButton.setFocusPainted(false);
+        backButton.setPreferredSize(new Dimension(120, 30));
 
         // Title
         JLabel titleLabel = new JLabel("KOREAN EXPRESS - ORDER REPORTS", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
         titleLabel.setForeground(Color.WHITE);
 
         headerPanel.add(backButton, BorderLayout.WEST);
@@ -249,18 +251,18 @@ public class AdminOrderReportView {
     }
 
     private void createSummaryPanel() {
-        summaryPanel = new JPanel(new GridLayout(2, 4, 5, 5));
+        summaryPanel = new JPanel(new GridLayout(2, 5, 5, 5));
         summaryPanel.setBorder(BorderFactory.createTitledBorder("Order Summary Statistics"));
         summaryPanel.setBackground(Color.WHITE);
 
         String[] summaryTitles = {
-            "Total Orders", "Pending Orders", "Preparing Orders", "In Transit Orders",
-            "Delivered Orders", "Cancelled Orders", "Top Customer Orders", "Top City Orders"
+            "Total Orders", "Total Order Lines", "Pending Orders", "Prepared Orders", "In Transit Orders", 
+            "Delivered Orders", "Cancelled Orders", "Discarded Orders", "Top Customer Orders", "Top City Orders"
         };
 
-        summaryLabels = new JLabel[8];
+        summaryLabels = new JLabel[10];
         
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 10; i++) {
             JPanel statPanel = new JPanel(new BorderLayout());
             statPanel.setBorder(BorderFactory.createLineBorder(new Color(220, 0, 0)));
             statPanel.setBackground(new Color(255, 240, 240));
@@ -283,19 +285,21 @@ public class AdminOrderReportView {
     public void updateSummaryPanel(Map<String, Object> summaryData) {
         SwingUtilities.invokeLater(() -> {
             summaryLabels[0].setText(String.valueOf(summaryData.getOrDefault("total_orders", 0)));
-            summaryLabels[1].setText(String.valueOf(summaryData.getOrDefault("pending_orders", 0)));
-            summaryLabels[2].setText(String.valueOf(summaryData.getOrDefault("preparing_orders", 0)));
-            summaryLabels[3].setText(String.valueOf(summaryData.getOrDefault("in_transit_orders", 0)));
-            summaryLabels[4].setText(String.valueOf(summaryData.getOrDefault("delivered_orders", 0)));
-            summaryLabels[5].setText(String.valueOf(summaryData.getOrDefault("cancelled_orders", 0)));
+            summaryLabels[1].setText(String.valueOf(summaryData.getOrDefault("total_order_lines", 0)));
+            summaryLabels[2].setText(String.valueOf(summaryData.getOrDefault("pending_orders", 0)));
+            summaryLabels[3].setText(String.valueOf(summaryData.getOrDefault("prepared_orders", 0)));
+            summaryLabels[4].setText(String.valueOf(summaryData.getOrDefault("in_transit_orders", 0)));
+            summaryLabels[5].setText(String.valueOf(summaryData.getOrDefault("delivered_orders", 0)));
+            summaryLabels[6].setText(String.valueOf(summaryData.getOrDefault("cancelled_orders", 0)));
+            summaryLabels[7].setText(String.valueOf(summaryData.getOrDefault("discarded_orders", 0)));
             
             String topCustomer = (String) summaryData.getOrDefault("top_customer", "None");
-            summaryLabels[6].setText(topCustomer.length() > 15 ? topCustomer.substring(0, 15) + "..." : topCustomer);
-            summaryLabels[6].setToolTipText(topCustomer);
+            summaryLabels[8].setText(topCustomer.length() > 15 ? topCustomer.substring(0, 15) + "..." : topCustomer);
+            summaryLabels[8].setToolTipText(topCustomer);
             
             String topCity = (String) summaryData.getOrDefault("top_city", "None");
-            summaryLabels[7].setText(topCity.length() > 15 ? topCity.substring(0, 15) + "..." : topCity);
-            summaryLabels[7].setToolTipText(topCity);
+            summaryLabels[9].setText(topCity.length() > 15 ? topCity.substring(0, 15) + "..." : topCity);
+            summaryLabels[9].setToolTipText(topCity);
         });
     }
 
@@ -305,18 +309,6 @@ public class AdminOrderReportView {
             ordersTable.getTableHeader().setBackground(new Color(220, 0, 0));
             ordersTable.getTableHeader().setForeground(Color.WHITE);
             ordersTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
-            
-            // Set column widths for better date display
-            if (ordersTable.getColumnCount() >= 8) {
-                ordersTable.getColumnModel().getColumn(0).setPreferredWidth(80);  // Order ID
-                ordersTable.getColumnModel().getColumn(1).setPreferredWidth(100); // Status
-                ordersTable.getColumnModel().getColumn(2).setPreferredWidth(100); // Order Lines
-                ordersTable.getColumnModel().getColumn(3).setPreferredWidth(120); // Avg Lines/Order
-                ordersTable.getColumnModel().getColumn(4).setPreferredWidth(80);  // Customer ID
-                ordersTable.getColumnModel().getColumn(5).setPreferredWidth(150); // Customer Name
-                ordersTable.getColumnModel().getColumn(6).setPreferredWidth(120); // City
-                ordersTable.getColumnModel().getColumn(7).setPreferredWidth(180); // Order Date
-            }
         });
     }
 
@@ -338,7 +330,6 @@ public class AdminOrderReportView {
         });
     }
 
-    // Validation methods
     public boolean validateFilterInput() {
         if (dayRadio.isSelected()) {
             return validateDayInput();
@@ -460,7 +451,6 @@ public class AdminOrderReportView {
         }
     }
 
-    // Getter methods
     public JFrame getFrame() {
         return frame;
     }

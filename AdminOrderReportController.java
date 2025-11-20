@@ -167,7 +167,8 @@ public class AdminOrderReportController {
                 "SUM(CASE WHEN status = 'Preparing' THEN 1 ELSE 0 END) as preparing_orders, " +
                 "SUM(CASE WHEN status = 'In Transit' THEN 1 ELSE 0 END) as in_transit_orders, " +
                 "SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_orders, " +
-                "SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_orders " +
+                "SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_orders, " +
+                "SUM(CASE WHEN status = 'Discarded' THEN 1 ELSE 0 END) as discarded_orders " +
                 "FROM Orders o " +
                 "JOIN Customers c ON o.customer_id = c.customer_id " +
                 "JOIN Cities city ON c.city_id = city.city_id " +
@@ -185,9 +186,61 @@ public class AdminOrderReportController {
                 summaryData.put("in_transit_orders", statusRs.getInt("in_transit_orders"));
                 summaryData.put("delivered_orders", statusRs.getInt("delivered_orders"));
                 summaryData.put("cancelled_orders", statusRs.getInt("cancelled_orders"));
+                summaryData.put("discarded_orders", statusRs.getInt("discarded_orders"));
             }
             statusRs.close();
             statusStmt.close();
+            
+            // Get total order lines count - SIMILAR TO ORDER COUNTER
+            String orderLinesQuery = 
+                "SELECT COUNT(*) as total_order_lines " +
+                "FROM Order_Lines ol " +
+                "JOIN Orders o ON ol.order_id = o.order_id " +
+                "JOIN Customers c ON o.customer_id = c.customer_id " +
+                "JOIN Cities city ON c.city_id = city.city_id " +
+                "WHERE " + dateCondition + " " +
+                "AND " + customerDateFilter + " " +
+                "AND " + cityDateFilter;
+
+            PreparedStatement orderLinesStmt = conn.prepareStatement(orderLinesQuery);
+            ResultSet orderLinesRs = orderLinesStmt.executeQuery();
+            
+            if (orderLinesRs.next()) {
+                summaryData.put("total_order_lines", orderLinesRs.getInt("total_order_lines"));
+            }
+            orderLinesRs.close();
+            orderLinesStmt.close();
+            
+            // Get order lines by status - SIMILAR TO ORDER STATUS COUNTERS
+            String orderLinesStatusQuery = 
+                "SELECT " +
+                "SUM(CASE WHEN o.status = 'Pending' THEN 1 ELSE 0 END) as pending_order_lines, " +
+                "SUM(CASE WHEN o.status = 'Preparing' THEN 1 ELSE 0 END) as preparing_order_lines, " +
+                "SUM(CASE WHEN o.status = 'In Transit' THEN 1 ELSE 0 END) as in_transit_order_lines, " +
+                "SUM(CASE WHEN o.status = 'Delivered' THEN 1 ELSE 0 END) as delivered_order_lines, " +
+                "SUM(CASE WHEN o.status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_order_lines, " +
+                "SUM(CASE WHEN o.status = 'Discarded' THEN 1 ELSE 0 END) as discarded_order_lines " +
+                "FROM Order_Lines ol " +
+                "JOIN Orders o ON ol.order_id = o.order_id " +
+                "JOIN Customers c ON o.customer_id = c.customer_id " +
+                "JOIN Cities city ON c.city_id = city.city_id " +
+                "WHERE " + dateCondition + " " +
+                "AND " + customerDateFilter + " " +
+                "AND " + cityDateFilter;
+
+            PreparedStatement orderLinesStatusStmt = conn.prepareStatement(orderLinesStatusQuery);
+            ResultSet orderLinesStatusRs = orderLinesStatusStmt.executeQuery();
+            
+            if (orderLinesStatusRs.next()) {
+                summaryData.put("pending_order_lines", orderLinesStatusRs.getInt("pending_order_lines"));
+                summaryData.put("preparing_order_lines", orderLinesStatusRs.getInt("preparing_order_lines"));
+                summaryData.put("in_transit_order_lines", orderLinesStatusRs.getInt("in_transit_order_lines"));
+                summaryData.put("delivered_order_lines", orderLinesStatusRs.getInt("delivered_order_lines"));
+                summaryData.put("cancelled_order_lines", orderLinesStatusRs.getInt("cancelled_order_lines"));
+                summaryData.put("discarded_order_lines", orderLinesStatusRs.getInt("discarded_order_lines"));
+            }
+            orderLinesStatusRs.close();
+            orderLinesStatusStmt.close();
             
             // Get top customer - only active customers that existed during the period
             String topCustomerQuery = 

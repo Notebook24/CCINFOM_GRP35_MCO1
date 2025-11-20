@@ -83,18 +83,16 @@ public class AdminHomePageController {
         adminHomePageView.getCheckProfitButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(adminHomePageView.getFrame(), 
-                    "Revenue Report feature coming soon!", 
-                    "Feature Preview", 
-                    JOptionPane.INFORMATION_MESSAGE);
+                adminHomePageView.getFrame().dispose();
+                AdminRevenueReportController revenueReportController = new AdminRevenueReportController();
             }
         });
 
         adminHomePageView.getCheckEngagementButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(adminHomePageView.getFrame(), 
-                    "Customer Engagement Report feature coming soon!", 
+                JOptionPane.showMessageDialog(adminHomePageView.getFrame(),     //Put custoemr engagement controller here
+                    "Customer Engagement Report feature coming soon!",  
                     "Feature Preview", 
                     JOptionPane.INFORMATION_MESSAGE);
             }
