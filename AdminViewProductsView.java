@@ -52,7 +52,7 @@ public class AdminViewProductsView {
         titlePanel.setBackground(Color.WHITE);
         titlePanel.setBorder(BorderFactory.createEmptyBorder(30, 0, 20, 0));
         
-        titleLabel = new JLabel("Product Management");
+        titleLabel = new JLabel("Menu Management");
         titleLabel.setFont(new Font("Helvetica Neue", Font.BOLD, 32));
         titleLabel.setForeground(new Color(230, 0, 0));
         titlePanel.add(titleLabel);
@@ -119,7 +119,7 @@ public class AdminViewProductsView {
         availabilityLabels.clear();
 
         if (products.isEmpty()) {
-            JLabel emptyLabel = new JLabel("No products found. Click 'Add New Product' to get started.");
+            JLabel emptyLabel = new JLabel("No menus found. Click 'Add New Product' to get started.");
             emptyLabel.setFont(new Font("Helvetica Neue", Font.PLAIN, 16));
             emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             emptyLabel.setForeground(Color.GRAY);

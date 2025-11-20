@@ -1,10 +1,6 @@
 import javax.swing.*;
 import java.awt.event.*;
 import java.sql.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Random;
 
 public class CustomerPaymentSessionController {
@@ -102,7 +98,17 @@ public class CustomerPaymentSessionController {
             return;
         }
 
-        double amountPaid = isPayNow ? Double.parseDouble(amountText) : 0;
+        if (isPayNow) {
+            if (!amountText.matches("\\d+(\\.\\d{1,2})?")) {
+                JOptionPane.showMessageDialog(null,
+                    "Numbers only!\nExample: 150 or 150.50",
+                      "Invalid Input",
+                JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+}
+double amountPaid = isPayNow ? Double.parseDouble(amountText) : 0;
         double subtotal = Double.parseDouble(view.getSubtotalValueLabel().getText().replace("₱", ""));
         double deliveryFee = Double.parseDouble(view.getDeliveryValueLabel().getText().replace("₱", ""));
         double total = subtotal + deliveryFee;

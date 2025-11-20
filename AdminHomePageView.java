@@ -68,7 +68,7 @@ public class AdminHomePageView {
         
         JPanel managementButtonsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         managementButtonsPanel.setBackground(new Color(230, 240, 255));
-        managementButtonsPanel.add(createButtonPanel(manageProductsButton = new JButton("MANAGE PRODUCTS"), new Color(230, 240, 255)));
+        managementButtonsPanel.add(createButtonPanel(manageProductsButton = new JButton("MANAGE MENU CATEGORIES"), new Color(230, 240, 255)));
         managementButtonsPanel.add(createButtonPanel(manageCityGroupsButton = new JButton("MANAGE CITY GROUPS"), new Color(230, 240, 255)));
         managementSection.add(managementButtonsPanel);
         

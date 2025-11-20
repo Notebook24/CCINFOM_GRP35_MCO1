@@ -15,14 +15,6 @@ public class CustomerSignUpView {
 
     private JPanel headerPanel, formPanel, buttonPanel, mainPanel;
 
-    // List of valid NCR cities 
-    // SELECT city_name FROM cities
-    private final String[] validCities = {
-        "Caloocan", "Las Piñas", "Makati", "Malabon", "Mandaluyong", "Manila",
-        "Marikina", "Muntinlupa", "Navotas", "Parañaque", "Pasay", "Pasig",
-        "Quezon", "San Juan", "Taguig", "Valenzuela"
-    };
-
     /**
      * Constructor for Customer Sign Up View class
      */
@@ -69,11 +61,40 @@ public class CustomerSignUpView {
         addField(formPanel, "First Name", firstNameField = new JTextField());
         addField(formPanel, "Last Name", lastNameField = new JTextField());
         addField(formPanel, "Email Address", emailField = new JTextField());
-        addField(formPanel, "Street Address", addressField = new JTextField());
+        
+        // Address field with format hint
+        JPanel addressPanel = new JPanel();
+        addressPanel.setLayout(new BoxLayout(addressPanel, BoxLayout.Y_AXIS));
+        addressPanel.setBackground(Color.WHITE);
+
+        JLabel addressLabel = new JLabel("Street Address");
+        addressLabel.setFont(new Font("Helvetica Neue", Font.BOLD, 13));
+        addressLabel.setForeground(new Color(198, 40, 40));
+        addressLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel addressHint = new JLabel("Format: House/Street, Barangay, City");
+        addressHint.setFont(new Font("Helvetica Neue", Font.ITALIC, 11));
+        addressHint.setForeground(Color.GRAY);
+        addressHint.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        addressField = new JTextField();
+        addressField.setFont(new Font("Helvetica Neue", Font.PLAIN, 13));
+        addressField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        addressField.setBorder(BorderFactory.createLineBorder(new Color(198, 40, 40), 1));
+
+        addressPanel.add(addressLabel);
+        addressPanel.add(Box.createVerticalStrut(2));
+        addressPanel.add(addressHint);
+        addressPanel.add(Box.createVerticalStrut(5));
+        addressPanel.add(addressField);
+        addressPanel.add(Box.createVerticalStrut(15));
+
+        formPanel.add(addressPanel);
+        
         addPasswordField(formPanel, "Password", passwordField = new JPasswordField());
         addPasswordField(formPanel, "Confirm Password", confirmPasswordField = new JPasswordField());
 
-        // button pannel
+        // button panel
         buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         buttonPanel.setBackground(Color.WHITE);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
@@ -165,12 +186,15 @@ public class CustomerSignUpView {
         parent.add(fieldPanel);
     }
 
-    // === VALIDATION LOGIC (unchanged) ===
+    // === VALIDATION LOGIC (updated for proper address format) ===
     public boolean validateInputs() {
         String password = new String(passwordField.getPassword());
         String confirmPassword = new String(confirmPasswordField.getPassword());
         String email = emailField.getText().trim();
         String address = addressField.getText().trim();
+
+        // Clear previous warnings
+        warningLabel.setText("");
 
         if (!password.equals(confirmPassword)) {
             warningLabel.setText("Confirm password and password do not align.");
@@ -182,34 +206,65 @@ public class CustomerSignUpView {
             return false;
         }
 
-        boolean validCity = false;
-        for (String city : validCities) {
-            if (address.toLowerCase().contains(city.toLowerCase())) {
-                validCity = true;
-                break;
+        // Enhanced address format validation
+        if (address.isEmpty()) {
+            warningLabel.setText("Address is required.");
+            return false;
+        }
+
+        // Check for basic address components
+        if (!address.matches(".*\\d+.*")) {
+            warningLabel.setText("Address must include house/street number.");
+            return false;
+        }
+
+        // Check for comma-separated format with at least 2 commas
+        String[] addressParts = address.split(",");
+        if (addressParts.length < 3) {
+            warningLabel.setText("Address must be in format: House/Street, Barangay, City");
+            return false;
+        }
+
+        // Check that each part is not empty
+        for (int i = 0; i < Math.min(3, addressParts.length); i++) {
+            if (addressParts[i].trim().isEmpty()) {
+                warningLabel.setText("Address parts cannot be empty. Format: House/Street, Barangay, City");
+                return false;
             }
-        }
-
-        if (!validCity) {
-            warningLabel.setText("City must be one of NCR cities.");
-            return false;
-        }
-
-        if (!address.matches(".*\\d+.*") || !address.contains(",")) {
-            warningLabel.setText("Address must include house/street, barangay/subdivision, and city.");
-            return false;
         }
 
         return true;
     }
 
-    // === GETTERS ===
-    public JFrame getFrame() { return frame; }
-    public String getFirstName() { return firstNameField.getText().trim(); }
-    public String getLastName() { return lastNameField.getText().trim(); }
-    public String getPassword() { return new String(passwordField.getPassword()); }
-    public String getEmail() { return emailField.getText().trim(); }
-    public String getAddress() { return addressField.getText().trim(); }
-    public JButton getSignUp() { return signUpButton; }
-    public JButton getBackButton() { return backButton; }
+    public JFrame getFrame() {
+        return frame;
+    }
+
+    public String getFirstName() {
+        return firstNameField.getText().trim();
+    }
+
+    public String getLastName() {
+        return lastNameField.getText().trim();
+    }
+
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    public String getEmail() {
+        return emailField.getText().trim();
+    }
+
+    public String getAddress() {
+        return addressField.getText().trim();
+    }
+
+    public JButton getSignUp() {
+        return signUpButton;
+    }
+
+    public JButton getBackButton() {
+        return backButton;
+    }
 }
