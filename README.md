@@ -1,3 +1,5 @@
+0. Change the credentials in the DBConnection.java to your credentials of your MySQL account.
+
 1. To compile the program in the Command Line, Use:
 javac AppDriver.java
 
