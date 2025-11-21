@@ -4,35 +4,35 @@ import java.awt.*;
 import java.util.Map;
 import java.util.Calendar;
 
-public class AdminMenuReportView {
+public class AdminCustomerEngagementView {
     private JFrame frame;
     private JPanel mainPanel, headerPanel, filterPanel, summaryPanel;
     private JButton backButton, applyFilterButton;
-    private JTable menuTable, categoryTable;
+    private JTable customerTable, cityTable;
     private JLabel[] summaryLabels;
     
-    // Filter components
+    // Filter components (SAME STRUCTURE as Menu Report)
     private JRadioButton dayRadio, monthRadio, yearRadio;
     private ButtonGroup filterGroup;
     private JTextField dayMonthField, dayDayField, dayYearField;
     private JTextField monthMonthField, monthYearField;
     private JTextField yearYearField;
     private JPanel dayPanel, monthPanel, yearPanel;
-    private AdminMenuReportController controller;
+    private AdminCustomerEngagementController controller;
 
-    public AdminMenuReportView(AdminMenuReportController controller) {
+    public AdminCustomerEngagementView(AdminCustomerEngagementController controller) {
         this.controller = controller;
         initializeUI();
     }
 
     private void initializeUI() {
-        // Frame setup
-        frame = new JFrame("Menu Report");
+        // Frame setup (SAME as Menu Report)
+        frame = new JFrame("Customer Engagement Report");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1200, 700);
         frame.setLocationRelativeTo(null);
 
-        // Main panel with scroll
+        // Main panel with scroll (SAME as Menu Report)
         mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         
@@ -41,36 +41,34 @@ public class AdminMenuReportView {
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         frame.add(scrollPane);
 
-        // Header with back button
+        // Header with back button (SAME structure, different title)
         createHeaderPanel();
         mainPanel.add(headerPanel);
 
-        // Filter panel
+        // Filter panel (SAME as Menu Report)
         createFilterPanel();
         mainPanel.add(filterPanel);
 
-        // Summary panel
+        // Summary panel (DIFFERENT metrics)
         createSummaryPanel();
         mainPanel.add(summaryPanel);
 
-        // Tables in tabs
+        // Tables in tabs (SAME structure, different tables)
         JTabbedPane tabbedPane = new JTabbedPane();
         
-        // Category table - first tab
-        categoryTable = new JTable();
-        // CHANGED: Use AUTO_RESIZE_ALL_COLUMNS to fill the entire width
-        categoryTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-        JScrollPane categoryScroll = new JScrollPane(categoryTable);
-        categoryScroll.setPreferredSize(new Dimension(1100, 300));
-        tabbedPane.addTab("Menu Category Breakdown", categoryScroll);
+        // Customer table - first tab
+        customerTable = new JTable();
+        customerTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        JScrollPane customerScroll = new JScrollPane(customerTable);
+        customerScroll.setPreferredSize(new Dimension(1100, 300));
+        tabbedPane.addTab("Customer Engagement Details", customerScroll);
         
-        // Menu table - second tab
-        menuTable = new JTable();
-        // CHANGED: Use AUTO_RESIZE_ALL_COLUMNS to fill the entire width
-        menuTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-        JScrollPane menuScroll = new JScrollPane(menuTable);
-        menuScroll.setPreferredSize(new Dimension(1100, 300));
-        tabbedPane.addTab("Menu Sales", menuScroll);
+        // City table - second tab
+        cityTable = new JTable();
+        cityTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        JScrollPane cityScroll = new JScrollPane(cityTable);
+        cityScroll.setPreferredSize(new Dimension(1100, 300));
+        tabbedPane.addTab("City Performance Breakdown", cityScroll);
         
         mainPanel.add(tabbedPane);
 
@@ -82,14 +80,14 @@ public class AdminMenuReportView {
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         headerPanel.setBackground(new Color(220, 0, 0));
 
-        // Back button
+        // Back button (SAME as Menu Report)
         backButton = new JButton("Back to Home");
         backButton.setBackground(Color.WHITE);
         backButton.setForeground(new Color(220, 0, 0));
         backButton.setFocusPainted(false);
 
-        // Title
-        JLabel titleLabel = new JLabel("KOREAN EXPRESS - MENU REPORTS", SwingConstants.CENTER);
+        // Title (DIFFERENT title)
+        JLabel titleLabel = new JLabel("KOREAN EXPRESS - CUSTOMER ENGAGEMENT REPORTS", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titleLabel.setForeground(Color.WHITE);
 
@@ -97,16 +95,15 @@ public class AdminMenuReportView {
         headerPanel.add(titleLabel, BorderLayout.CENTER);
     }
 
+    // ALL FILTER METHODS REMAIN EXACTLY THE SAME as Menu Report
     private void createFilterPanel() {
         filterPanel = new JPanel(new BorderLayout());
         filterPanel.setBorder(BorderFactory.createTitledBorder("Filter Options"));
         filterPanel.setBackground(Color.WHITE);
         
-        // Main filter container
         JPanel filterContainer = new JPanel(new GridLayout(4, 1, 5, 5));
         filterContainer.setBackground(Color.WHITE);
         
-        // Initialize radio buttons
         dayRadio = new JRadioButton("Day:");
         monthRadio = new JRadioButton("Month:");
         yearRadio = new JRadioButton("Year:");
@@ -116,21 +113,17 @@ public class AdminMenuReportView {
         filterGroup.add(monthRadio);
         filterGroup.add(yearRadio);
         
-        // Set default selection
         dayRadio.setSelected(true);
         
-        // Create input panels
         createDayPanel();
         createMonthPanel();
         createYearPanel();
         
-        // Apply filter button
         applyFilterButton = new JButton("Apply Filter");
         applyFilterButton.setBackground(new Color(220, 0, 0));
         applyFilterButton.setForeground(Color.WHITE);
         applyFilterButton.setFocusPainted(false);
         
-        // Add components to container
         JPanel dayRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
         dayRow.add(dayRadio);
         dayRow.add(dayPanel);
@@ -152,15 +145,11 @@ public class AdminMenuReportView {
         
         filterPanel.add(filterContainer, BorderLayout.CENTER);
         
-        // Add radio button listeners to enable/disable fields
         dayRadio.addActionListener(e -> updateFieldStates());
         monthRadio.addActionListener(e -> updateFieldStates());
         yearRadio.addActionListener(e -> updateFieldStates());
         
-        // Set initial field states
         updateFieldStates();
-        
-        // Set current date as default
         setCurrentDateDefaults();
     }
 
@@ -208,7 +197,6 @@ public class AdminMenuReportView {
         boolean monthSelected = monthRadio.isSelected();
         boolean yearSelected = yearRadio.isSelected();
         
-        // Enable/disable fields based on selection
         setFieldsEnabled(dayPanel, daySelected);
         setFieldsEnabled(monthPanel, monthSelected);
         setFieldsEnabled(yearPanel, yearSelected);
@@ -229,16 +217,13 @@ public class AdminMenuReportView {
         int currentMonth = cal.get(Calendar.MONTH) + 1;
         int currentDay = cal.get(Calendar.DAY_OF_MONTH);
         
-        // Set current date in day fields
         dayMonthField.setText(String.valueOf(currentMonth));
         dayDayField.setText(String.valueOf(currentDay));
         dayYearField.setText(String.valueOf(currentYear));
         
-        // Set current date in month fields
         monthMonthField.setText(String.valueOf(currentMonth));
         monthYearField.setText(String.valueOf(currentYear));
         
-        // Set current year in year field
         yearYearField.setText(String.valueOf(currentYear));
     }
 
@@ -247,9 +232,10 @@ public class AdminMenuReportView {
         summaryPanel.setBorder(BorderFactory.createTitledBorder("Summary Statistics"));
         summaryPanel.setBackground(Color.WHITE);
 
+        // DIFFERENT summary titles for Customer Engagement
         String[] summaryTitles = {
-            "Total Menus", "Menu Groups", "Available Menus", "Available Groups",
-            "Sold Menus", "Total Revenue", "Most Sold Menu", "Most Sold Group"
+            "Active Customers", "Deleted Accounts", "Total Orders", "Total Payments",
+            "Total Amount Spent", "Total Amount Refunded", "Payment Completion Rate", "Last Purchase Date"
         };
 
         summaryLabels = new JLabel[8];
@@ -276,68 +262,68 @@ public class AdminMenuReportView {
 
     public void updateSummaryPanel(Map<String, Object> summaryData) {
         SwingUtilities.invokeLater(() -> {
-            summaryLabels[0].setText(String.valueOf(summaryData.getOrDefault("total_menus", 0)));
-            summaryLabels[1].setText(String.valueOf(summaryData.getOrDefault("total_menu_groups", 0)));
-            summaryLabels[2].setText(String.valueOf(summaryData.getOrDefault("available_menus", 0)));
-            summaryLabels[3].setText(String.valueOf(summaryData.getOrDefault("available_menu_groups", 0)));
-            summaryLabels[4].setText(String.valueOf(summaryData.getOrDefault("sold_menus", 0)));
-            summaryLabels[5].setText(String.format("₱%.2f", summaryData.getOrDefault("total_revenue", 0.0)));
+            summaryLabels[0].setText(String.valueOf(summaryData.getOrDefault("active_customers", 0)));
+            summaryLabels[1].setText(String.valueOf(summaryData.getOrDefault("deleted_accounts", 0)));
+            summaryLabels[2].setText(String.valueOf(summaryData.getOrDefault("total_orders", 0)));
+            summaryLabels[3].setText(String.valueOf(summaryData.getOrDefault("total_payments", 0)));
+            summaryLabels[4].setText(String.format("₱%.2f", summaryData.getOrDefault("total_amount_spent", 0.0)));
+            summaryLabels[5].setText(String.format("₱%.2f", summaryData.getOrDefault("total_amount_refunded", 0.0)));
+            summaryLabels[6].setText(String.format("%.2f%%", summaryData.getOrDefault("payment_completion_rate", 0.0)));
             
-            String mostSoldMenu = (String) summaryData.getOrDefault("most_sold_menu", "None");
-            summaryLabels[6].setText(mostSoldMenu.length() > 15 ? mostSoldMenu.substring(0, 15) + "..." : mostSoldMenu);
-            summaryLabels[6].setToolTipText(mostSoldMenu);
-            
-            String mostSoldGroup = (String) summaryData.getOrDefault("most_sold_group", "None");
-            summaryLabels[7].setText(mostSoldGroup.length() > 15 ? mostSoldGroup.substring(0, 15) + "..." : mostSoldGroup);
-            summaryLabels[7].setToolTipText(mostSoldGroup);
-        });
-    }
-
-    public void updateMenuTable(DefaultTableModel model) {
-        SwingUtilities.invokeLater(() -> {
-            menuTable.setModel(model);
-            menuTable.getTableHeader().setBackground(new Color(220, 0, 0));
-            menuTable.getTableHeader().setForeground(Color.WHITE);
-            menuTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
-            
-            // Set column widths for better display - they will now auto-resize to fill space
-            if (menuTable.getColumnCount() >= 9) {
-                menuTable.getColumnModel().getColumn(0).setPreferredWidth(80);  // Menu ID
-                menuTable.getColumnModel().getColumn(1).setPreferredWidth(200); // Menu Name
-                menuTable.getColumnModel().getColumn(2).setPreferredWidth(150); // Menu Group
-                menuTable.getColumnModel().getColumn(3).setPreferredWidth(100); // Unit Price
-                menuTable.getColumnModel().getColumn(4).setPreferredWidth(100); // Total Sold
-                menuTable.getColumnModel().getColumn(5).setPreferredWidth(100); // Total Orders
-                menuTable.getColumnModel().getColumn(6).setPreferredWidth(120); // Revenue
-                menuTable.getColumnModel().getColumn(7).setPreferredWidth(120); // Avg Qty/Order
-                menuTable.getColumnModel().getColumn(8).setPreferredWidth(100); // Availability
+            Object lastPurchase = summaryData.get("last_purchase_date");
+            if (lastPurchase instanceof java.sql.Timestamp) {
+                java.sql.Timestamp ts = (java.sql.Timestamp) lastPurchase;
+                summaryLabels[7].setText(new java.text.SimpleDateFormat("yyyy-MM-dd").format(ts));
+            } else if (lastPurchase instanceof java.util.Date) {
+                summaryLabels[7].setText(new java.text.SimpleDateFormat("yyyy-MM-dd").format((java.util.Date) lastPurchase));
+            } else {
+                summaryLabels[7].setText("Never");
             }
         });
     }
 
-    public void updateCategoryTable(DefaultTableModel model) {
+    public void updateCustomerTable(DefaultTableModel model) {
         SwingUtilities.invokeLater(() -> {
-            categoryTable.setModel(model);
-            categoryTable.getTableHeader().setBackground(new Color(220, 0, 0));
-            categoryTable.getTableHeader().setForeground(Color.WHITE);
-            categoryTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+            customerTable.setModel(model);
+            customerTable.getTableHeader().setBackground(new Color(220, 0, 0));
+            customerTable.getTableHeader().setForeground(Color.WHITE);
+            customerTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
             
-            // Set column widths for better display - they will now auto-resize to fill space
-            if (categoryTable.getColumnCount() >= 9) {
-                categoryTable.getColumnModel().getColumn(0).setPreferredWidth(80);  // Category ID
-                categoryTable.getColumnModel().getColumn(1).setPreferredWidth(200); // Category Name
-                categoryTable.getColumnModel().getColumn(2).setPreferredWidth(120); // Availability
-                categoryTable.getColumnModel().getColumn(3).setPreferredWidth(100); // Total Menus
-                categoryTable.getColumnModel().getColumn(4).setPreferredWidth(120); // Available Menus
-                categoryTable.getColumnModel().getColumn(5).setPreferredWidth(120); // Unavailable Menus
-                categoryTable.getColumnModel().getColumn(6).setPreferredWidth(120); // Total Sold
-                categoryTable.getColumnModel().getColumn(7).setPreferredWidth(120); // Total Revenue
-                categoryTable.getColumnModel().getColumn(8).setPreferredWidth(120); // Avg Revenue
+            if (customerTable.getColumnCount() >= 9) {
+                customerTable.getColumnModel().getColumn(0).setPreferredWidth(80);   // Customer ID
+                customerTable.getColumnModel().getColumn(1).setPreferredWidth(200);  // Full Name
+                customerTable.getColumnModel().getColumn(2).setPreferredWidth(200);  // Email
+                customerTable.getColumnModel().getColumn(3).setPreferredWidth(150);  // City
+                customerTable.getColumnModel().getColumn(4).setPreferredWidth(100);  // Total Orders
+                customerTable.getColumnModel().getColumn(5).setPreferredWidth(120);  // Products Purchased
+                customerTable.getColumnModel().getColumn(6).setPreferredWidth(100);  // Total Payments
+                customerTable.getColumnModel().getColumn(7).setPreferredWidth(120);  // Total Amount Spent
+                customerTable.getColumnModel().getColumn(8).setPreferredWidth(120);  // Last Purchase
             }
         });
     }
 
-    // Validation methods
+    public void updateCityTable(DefaultTableModel model) {
+        SwingUtilities.invokeLater(() -> {
+            cityTable.setModel(model);
+            cityTable.getTableHeader().setBackground(new Color(220, 0, 0));
+            cityTable.getTableHeader().setForeground(Color.WHITE);
+            cityTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+            
+            if (cityTable.getColumnCount() >= 8) {
+                cityTable.getColumnModel().getColumn(0).setPreferredWidth(80);   // City ID
+                cityTable.getColumnModel().getColumn(1).setPreferredWidth(200);  // City Name
+                cityTable.getColumnModel().getColumn(2).setPreferredWidth(120);  // Active Customers
+                cityTable.getColumnModel().getColumn(3).setPreferredWidth(120);  // Total Orders
+                cityTable.getColumnModel().getColumn(4).setPreferredWidth(120);  // Total Revenue
+                cityTable.getColumnModel().getColumn(5).setPreferredWidth(120);  // Payment Completion
+                cityTable.getColumnModel().getColumn(6).setPreferredWidth(120);  // Last Purchase
+                cityTable.getColumnModel().getColumn(7).setPreferredWidth(100);  // Delivery Fee
+            }
+        });
+    }
+
+    // ALL VALIDATION METHODS REMAIN EXACTLY THE SAME as Menu Report
     public boolean validateFilterInput() {
         if (dayRadio.isSelected()) {
             return validateDayInput();
@@ -459,7 +445,7 @@ public class AdminMenuReportView {
         }
     }
 
-    // Getter methods
+    // GETTER METHODS REMAIN EXACTLY THE SAME as Menu Report
     public JFrame getFrame() {
         return frame;
     }

@@ -10,7 +10,7 @@ public class AdminChangePasswordController {
         adminChangePasswordView = view;
         adminId = id;
 
-        adminChangePasswordView.getConfirm().addActionListener(new ActionListener() {
+        adminChangePasswordView.getChangeButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!adminChangePasswordView.validateInputs()) {
@@ -32,13 +32,12 @@ public class AdminChangePasswordController {
             @Override
             public void actionPerformed(ActionEvent e) {
                 adminChangePasswordView.getFrame().dispose();
-                // Assuming you have an AdminLoginView or LandingPageView
                 LandingPageView landingPageView = new LandingPageView();
                 new LandingPageController(landingPageView);
             }
         });
 
-        adminChangePasswordView.getSettingsButton().addActionListener(new ActionListener() {
+        adminChangePasswordView.getProfileButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 openSettingsPage();

@@ -5,13 +5,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.LocalDate;
 
 public class AdminRevenueReportController {
     private AdminRevenueReportView view;
     private static AdminRevenueReportView currInstance;
     private Timer autoRefreshTimer;
+    private int adminId;
 
-    public AdminRevenueReportController() {
+    public AdminRevenueReportController(int adminId) {
+        this.adminId = adminId;
         if(currInstance != null) {
             currInstance.getFrame().dispose();
         }
@@ -41,8 +46,55 @@ public class AdminRevenueReportController {
             return;
         }
         
+        // Check if the selected date is in the future
+        if (isFutureDate()) {
+            JOptionPane.showMessageDialog(view.getFrame(), 
+                "You cannot select a future date. Maximum allowed is today.", 
+                "Invalid Date", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
         refreshDataWithCurrentFilter();
         view.showSuccessMessage("Filter applied successfully!");
+    }
+
+    private boolean isFutureDate() {
+        try {
+            String filterType = view.getFilterType();
+            // Use PHT timezone (Asia/Manila)
+            ZonedDateTime nowPHT = ZonedDateTime.now(ZoneId.of("Asia/Manila"));
+            LocalDate today = nowPHT.toLocalDate();
+            
+            switch (filterType) {
+                case "Day":
+                    int dayMonth = Integer.parseInt(view.getDayMonth());
+                    int dayDay = Integer.parseInt(view.getDayDay());
+                    int dayYear = Integer.parseInt(view.getDayYear());
+                    LocalDate selectedDay = LocalDate.of(dayYear, dayMonth, dayDay);
+                    return selectedDay.isAfter(today);
+                    
+                case "Month":
+                    int monthMonth = Integer.parseInt(view.getMonthMonth());
+                    int monthYear = Integer.parseInt(view.getMonthYear());
+                    // Check if the selected month is in the future
+                    if (monthYear > today.getYear()) {
+                        return true;
+                    } else if (monthYear == today.getYear() && monthMonth > today.getMonthValue()) {
+                        return true;
+                    }
+                    return false;
+                    
+                case "Year":
+                    int yearYear = Integer.parseInt(view.getYearYear());
+                    return yearYear > today.getYear();
+                    
+                default:
+                    return false;
+            }
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private void refreshDataWithCurrentFilter() {
@@ -85,7 +137,7 @@ public class AdminRevenueReportController {
     private void goBackToAdminHome() {
         view.getFrame().dispose();
         AdminHomePageView homePageView = new AdminHomePageView();
-        new AdminHomePageController(homePageView, 1);
+        new AdminHomePageController(homePageView, adminId);
     }
 
     private Map<String, Object> getSummaryData(String filterType) throws SQLException {

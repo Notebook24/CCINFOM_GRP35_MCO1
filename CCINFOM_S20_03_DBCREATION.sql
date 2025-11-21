@@ -1,6 +1,6 @@
-CREATE DATABASE IF NOT EXISTS S20_GROUP3_DB;
+CREATE DATABASE IF NOT EXISTS CCINFOM_S20_03_DBCREATION;
 
-USE S20_GROUP3_DB;
+USE CCINFOM_S20_03_DBCREATION;
 
 CREATE TABLE Menu_Category (
     menu_category_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -17,6 +17,7 @@ CREATE TABLE City_Delivery_Groups (
     city_delivery_group_id INT AUTO_INCREMENT PRIMARY KEY,
     city_delivery_fee DECIMAL(10,2) NOT NULL CHECK (city_delivery_fee >= 0),
     city_delivery_time_minutes INT NOT NULL,
+    is_available TINYINT(1) DEFAULT 1 NOT NULL,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
 );
@@ -25,11 +26,10 @@ CREATE TABLE Cities (
     city_id INT AUTO_INCREMENT PRIMARY KEY,
     city_name VARCHAR(50) NOT NULL UNIQUE,
     city_delivery_group_id INT NOT NULL,
+    is_available TINYINT(1) DEFAULT 1 NOT NULL,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (city_delivery_group_id) REFERENCES City_Delivery_Groups(city_delivery_group_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
 );
 
 CREATE TABLE Customers (
@@ -37,15 +37,13 @@ CREATE TABLE Customers (
     last_name VARCHAR(50) NOT NULL,
     first_name VARCHAR(50) NOT NULL,
     email VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(100) NOT NULL, -- cipher the password
+    password VARCHAR(100) NOT NULL,
     address VARCHAR(50) NOT NULL,
     city_id INT,
     is_active TINYINT(1) DEFAULT 1 NOT NULL,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (city_id) REFERENCES Cities(city_id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
 );
 
 CREATE TABLE Menus (
@@ -69,8 +67,6 @@ CREATE TABLE Orders (
     preparation_time TIME NOT NULL,
     delivery_time TIME NOT NULL,
     total_price DECIMAL(10,2) NOT NULL CHECK (total_price >= 0),
-    -- Pending = Not Paid / "Pay Later" option
-    -- adjust CustomerCartPageController in the insert statement
     status ENUM('Pending', 'Preparing', 'In Transit', 'Delivered', 'Cancelled') DEFAULT 'Pending' NOT NULL,
     order_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
@@ -100,6 +96,7 @@ CREATE TABLE Payments (
     amount_paid DECIMAL(10,2) NOT NULL CHECK (amount_paid >= 0),
     reference_number VARCHAR(10) UNIQUE NOT NULL,
     is_paid TINYINT DEFAULT 0 NOT NULL,
+    is_refunded TINYINT(1) NOT NULL DEFAULT 0,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
     paid_date DATETIME,
@@ -145,6 +142,11 @@ INSERT INTO Cities (city_name, city_delivery_group_id) VALUES
 ('Muntinlupa', 4),
 ('Valenzuela', 4);
 
+INSERT INTO Menu_Category (menu_category_name, time_start, time_end, is_available) VALUES 
+	('Breakfast', '06:00:00', '10:59:59', 1), 
+	('Lunch', '11:00:00', '15:59:59', 1), 
+    ('Dinner', '16:00:00', '22:59:59', 1);
+    
 -- Confirmations
 SELECT * FROM Customers;
 SELECT * FROM Menus;
@@ -163,5 +165,3 @@ DESCRIBE Cities;
 DESCRIBE City_Delivery_Groups;
 DESCRIBE Order_Lines;
 DESCRIBE Orders;
-
-

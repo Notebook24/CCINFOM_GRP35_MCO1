@@ -65,7 +65,7 @@ public class AdminHomePageController {
             public void actionPerformed(ActionEvent e) {
                 adminHomePageView.getFrame().dispose();
                 // Create and show the Menu Report system
-                AdminMenuReportController menuReportController = new AdminMenuReportController();
+                AdminMenuReportController menuReportController = new AdminMenuReportController(adminId);
             }
         });
 
@@ -75,7 +75,7 @@ public class AdminHomePageController {
             public void actionPerformed(ActionEvent e) {
                 adminHomePageView.getFrame().dispose();
                 // Create and show the Order Report system
-                AdminOrderReportController orderReportController = new AdminOrderReportController();
+                AdminOrderReportController orderReportController = new AdminOrderReportController(adminId);
             }
         });
 
@@ -84,17 +84,15 @@ public class AdminHomePageController {
             @Override
             public void actionPerformed(ActionEvent e) {
                 adminHomePageView.getFrame().dispose();
-                AdminRevenueReportController revenueReportController = new AdminRevenueReportController();
+                AdminRevenueReportController revenueReportController = new AdminRevenueReportController(adminId);
             }
         });
 
         adminHomePageView.getCheckEngagementButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(adminHomePageView.getFrame(),     //Put custoemr engagement controller here
-                    "Customer Engagement Report feature coming soon!",  
-                    "Feature Preview", 
-                    JOptionPane.INFORMATION_MESSAGE);
+                adminHomePageView.getFrame().dispose();
+                AdminCustomerEngagementController engagementReportController = new AdminCustomerEngagementController(adminId);
             }
         });
     }

@@ -85,26 +85,28 @@ public class AdminOrderReportView {
 
     private void createHeaderPanel() {
         headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3)); // Smaller padding
         headerPanel.setBackground(new Color(220, 0, 0));
-        headerPanel.setPreferredSize(new Dimension(1200, 40));
+        headerPanel.setPreferredSize(new Dimension(1200, 30)); // Smaller height
 
         // Back button
         backButton = new JButton("Back to Home");
         backButton.setBackground(Color.WHITE);
         backButton.setForeground(new Color(220, 0, 0));
         backButton.setFocusPainted(false);
-        backButton.setPreferredSize(new Dimension(120, 30));
+        backButton.setPreferredSize(new Dimension(100, 25)); // Smaller button
+        backButton.setFont(new Font("Arial", Font.PLAIN, 10)); // Smaller font
 
         // Title
         JLabel titleLabel = new JLabel("KOREAN EXPRESS - ORDER REPORTS", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 12)); // Smaller font
         titleLabel.setForeground(Color.WHITE);
 
         headerPanel.add(backButton, BorderLayout.WEST);
         headerPanel.add(titleLabel, BorderLayout.CENTER);
     }
 
+    // ... (rest of the filter panel, summary panel, and other methods remain the same)
     private void createFilterPanel() {
         filterPanel = new JPanel(new BorderLayout());
         filterPanel.setBorder(BorderFactory.createTitledBorder("Filter Options"));

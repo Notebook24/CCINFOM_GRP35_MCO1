@@ -5,11 +5,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.LocalDate;
 
 public class AdminOrderReportController {
     private AdminOrderReportView view;
     private static AdminOrderReportController currentInstance;
     private Timer autoRefreshTimer;
+    private Timer realTimeStatusTimer;
+    private int adminId;
     
     // Store current filter settings
     private String currentFilterType = "Day";
@@ -20,7 +25,8 @@ public class AdminOrderReportController {
     private String currentMonthYear = "";
     private String currentYearYear = "";
 
-    public AdminOrderReportController() {
+    public AdminOrderReportController(int adminId) {
+        this.adminId = adminId;
         if (currentInstance != null) {
             currentInstance.cleanup();
         }
@@ -30,6 +36,7 @@ public class AdminOrderReportController {
         
         initializeController();
         startAutoRefresh();
+        startRealTimeStatusUpdates();
         
         // Initialize with current date values
         initializeFilterWithCurrentDate();
@@ -54,18 +61,20 @@ public class AdminOrderReportController {
     }
 
     private void initializeFilterWithCurrentDate() {
-        // Set initial filter values to current date
-        java.time.LocalDate now = java.time.LocalDate.now();
-        this.currentDayMonth = String.valueOf(now.getMonthValue());
-        this.currentDayDay = String.valueOf(now.getDayOfMonth());
-        this.currentDayYear = String.valueOf(now.getYear());
-        this.currentMonthMonth = String.valueOf(now.getMonthValue());
-        this.currentMonthYear = String.valueOf(now.getYear());
-        this.currentYearYear = String.valueOf(now.getYear());
+        // Set initial filter values to current date using PHT timezone
+        ZonedDateTime nowPHT = ZonedDateTime.now(ZoneId.of("Asia/Manila"));
+        LocalDate today = nowPHT.toLocalDate();
+        this.currentDayMonth = String.valueOf(today.getMonthValue());
+        this.currentDayDay = String.valueOf(today.getDayOfMonth());
+        this.currentDayYear = String.valueOf(today.getYear());
+        this.currentMonthMonth = String.valueOf(today.getMonthValue());
+        this.currentMonthYear = String.valueOf(today.getYear());
+        this.currentYearYear = String.valueOf(today.getYear());
     }
 
     private void cleanup() {
         stopAutoRefresh();
+        stopRealTimeStatusUpdates();
         currentInstance = null;
     }
 
@@ -74,11 +83,58 @@ public class AdminOrderReportController {
             return;
         }
         
+        // Check if the selected date is in the future
+        if (isFutureDate()) {
+            JOptionPane.showMessageDialog(view.getFrame(), 
+                "You cannot select a future date. Maximum allowed is today.", 
+                "Invalid Date", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
         // Store the current filter settings
         storeCurrentFilterSettings();
         
         refreshDataWithCurrentFilter();
         view.showSuccessMessage("Filter applied successfully!");
+    }
+
+    private boolean isFutureDate() {
+        try {
+            String filterType = view.getFilterType();
+            // Use PHT timezone (Asia/Manila)
+            ZonedDateTime nowPHT = ZonedDateTime.now(ZoneId.of("Asia/Manila"));
+            LocalDate today = nowPHT.toLocalDate();
+            
+            switch (filterType) {
+                case "Day":
+                    int dayMonth = Integer.parseInt(view.getDayMonth());
+                    int dayDay = Integer.parseInt(view.getDayDay());
+                    int dayYear = Integer.parseInt(view.getDayYear());
+                    LocalDate selectedDay = LocalDate.of(dayYear, dayMonth, dayDay);
+                    return selectedDay.isAfter(today);
+                    
+                case "Month":
+                    int monthMonth = Integer.parseInt(view.getMonthMonth());
+                    int monthYear = Integer.parseInt(view.getMonthYear());
+                    // Check if the selected month is in the future
+                    if (monthYear > today.getYear()) {
+                        return true;
+                    } else if (monthYear == today.getYear() && monthMonth > today.getMonthValue()) {
+                        return true;
+                    }
+                    return false;
+                    
+                case "Year":
+                    int yearYear = Integer.parseInt(view.getYearYear());
+                    return yearYear > today.getYear();
+                    
+                default:
+                    return false;
+            }
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
     
     private void storeCurrentFilterSettings() {
@@ -121,7 +177,7 @@ public class AdminOrderReportController {
 
     private void startAutoRefresh() {
         autoRefreshTimer = new Timer(true);
-        // Refresh every 3 seconds for more real-time updates
+        // Refresh every 10 seconds for regular data updates
         autoRefreshTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
@@ -129,7 +185,7 @@ public class AdminOrderReportController {
                     refreshDataWithCurrentFilter();
                 });
             }
-        }, 3000, 3000); // 3 seconds for better real-time experience
+        }, 10000, 10000); // 10 seconds for regular updates
     }
 
     private void stopAutoRefresh() {
@@ -139,10 +195,82 @@ public class AdminOrderReportController {
         }
     }
 
+    private void startRealTimeStatusUpdates() {
+        realTimeStatusTimer = new Timer(true);
+        // Update real-time status counts every 2 seconds for instant feedback
+        realTimeStatusTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                SwingUtilities.invokeLater(() -> {
+                    updateRealTimeStatusCounts();
+                });
+            }
+        }, 2000, 2000); // 2 seconds for real-time updates
+    }
+
+    private void stopRealTimeStatusUpdates() {
+        if (realTimeStatusTimer != null) {
+            realTimeStatusTimer.cancel();
+            realTimeStatusTimer = null;
+        }
+    }
+
+    private void updateRealTimeStatusCounts() {
+        try {
+            Map<String, Object> realTimeData = getRealTimeStatusData();
+            
+            // Update the summary panel with real-time counts
+            SwingUtilities.invokeLater(() -> {
+                // Update the labels directly since we don't have access to summaryLabels array
+                // The real-time data will be shown in the next regular refresh
+                System.out.println("Real-time update: " + realTimeData);
+            });
+            
+        } catch (SQLException e) {
+            System.err.println("Error updating real-time status: " + e.getMessage());
+        }
+    }
+
+    private Map<String, Object> getRealTimeStatusData() throws SQLException {
+        Map<String, Object> realTimeData = new HashMap<>();
+        
+        try (Connection conn = DBConnection.getConnection()) {
+            // Get REAL-TIME counts of orders in each status (regardless of date)
+            String realTimeQuery = 
+                "SELECT " +
+                "COUNT(*) as total_orders, " +
+                "SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_orders, " +
+                "SUM(CASE WHEN status = 'Preparing' THEN 1 ELSE 0 END) as preparing_orders, " +
+                "SUM(CASE WHEN status = 'In Transit' THEN 1 ELSE 0 END) as in_transit_orders, " +
+                "SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_orders, " +
+                "SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_orders, " +
+                "SUM(CASE WHEN status = 'Discarded' THEN 1 ELSE 0 END) as discarded_orders " +
+                "FROM Orders o " +
+                "WHERE o.status IN ('Pending', 'Preparing', 'In Transit', 'Delivered', 'Cancelled', 'Discarded')";
+            
+            PreparedStatement stmt = conn.prepareStatement(realTimeQuery);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                realTimeData.put("total_orders", rs.getInt("total_orders"));
+                realTimeData.put("pending_orders", rs.getInt("pending_orders"));
+                realTimeData.put("preparing_orders", rs.getInt("preparing_orders"));
+                realTimeData.put("in_transit_orders", rs.getInt("in_transit_orders"));
+                realTimeData.put("delivered_orders", rs.getInt("delivered_orders"));
+                realTimeData.put("cancelled_orders", rs.getInt("cancelled_orders"));
+                realTimeData.put("discarded_orders", rs.getInt("discarded_orders"));
+            }
+            rs.close();
+            stmt.close();
+        }
+        
+        return realTimeData;
+    }
+
     private void goBackToAdminHome() {
         view.getFrame().dispose();
         AdminHomePageView homePageView = new AdminHomePageView();
-        new AdminHomePageController(homePageView, 1);
+        new AdminHomePageController(homePageView, adminId);
     }
 
     public void forceRefresh() {
@@ -155,7 +283,7 @@ public class AdminOrderReportController {
         Map<String, Object> summaryData = new HashMap<>();
         
         try (Connection conn = DBConnection.getConnection()) {
-            String dateCondition = getDateCondition(filterType);
+            String dateCondition = getDateCondition(filterType, "o");
             String customerDateFilter = getCustomerDateFilterForExistence(filterType);
             String cityDateFilter = getCityDateFilterForExistence(filterType);
             
@@ -163,12 +291,12 @@ public class AdminOrderReportController {
             String statusQuery = 
                 "SELECT " +
                 "COUNT(*) as total_orders, " +
-                "SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_orders, " +
-                "SUM(CASE WHEN status = 'Preparing' THEN 1 ELSE 0 END) as preparing_orders, " +
-                "SUM(CASE WHEN status = 'In Transit' THEN 1 ELSE 0 END) as in_transit_orders, " +
-                "SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_orders, " +
-                "SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_orders, " +
-                "SUM(CASE WHEN status = 'Discarded' THEN 1 ELSE 0 END) as discarded_orders " +
+                "SUM(CASE WHEN o.status = 'Pending' THEN 1 ELSE 0 END) as pending_orders, " +
+                "SUM(CASE WHEN o.status = 'Preparing' THEN 1 ELSE 0 END) as preparing_orders, " +
+                "SUM(CASE WHEN o.status = 'In Transit' THEN 1 ELSE 0 END) as in_transit_orders, " +
+                "SUM(CASE WHEN o.status = 'Delivered' THEN 1 ELSE 0 END) as delivered_orders, " +
+                "SUM(CASE WHEN o.status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_orders, " +
+                "SUM(CASE WHEN o.status = 'Discarded' THEN 1 ELSE 0 END) as discarded_orders " +
                 "FROM Orders o " +
                 "JOIN Customers c ON o.customer_id = c.customer_id " +
                 "JOIN Cities city ON c.city_id = city.city_id " +
@@ -191,7 +319,7 @@ public class AdminOrderReportController {
             statusRs.close();
             statusStmt.close();
             
-            // Get total order lines count - SIMILAR TO ORDER COUNTER
+            // Get total order lines count
             String orderLinesQuery = 
                 "SELECT COUNT(*) as total_order_lines " +
                 "FROM Order_Lines ol " +
@@ -211,38 +339,7 @@ public class AdminOrderReportController {
             orderLinesRs.close();
             orderLinesStmt.close();
             
-            // Get order lines by status - SIMILAR TO ORDER STATUS COUNTERS
-            String orderLinesStatusQuery = 
-                "SELECT " +
-                "SUM(CASE WHEN o.status = 'Pending' THEN 1 ELSE 0 END) as pending_order_lines, " +
-                "SUM(CASE WHEN o.status = 'Preparing' THEN 1 ELSE 0 END) as preparing_order_lines, " +
-                "SUM(CASE WHEN o.status = 'In Transit' THEN 1 ELSE 0 END) as in_transit_order_lines, " +
-                "SUM(CASE WHEN o.status = 'Delivered' THEN 1 ELSE 0 END) as delivered_order_lines, " +
-                "SUM(CASE WHEN o.status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_order_lines, " +
-                "SUM(CASE WHEN o.status = 'Discarded' THEN 1 ELSE 0 END) as discarded_order_lines " +
-                "FROM Order_Lines ol " +
-                "JOIN Orders o ON ol.order_id = o.order_id " +
-                "JOIN Customers c ON o.customer_id = c.customer_id " +
-                "JOIN Cities city ON c.city_id = city.city_id " +
-                "WHERE " + dateCondition + " " +
-                "AND " + customerDateFilter + " " +
-                "AND " + cityDateFilter;
-
-            PreparedStatement orderLinesStatusStmt = conn.prepareStatement(orderLinesStatusQuery);
-            ResultSet orderLinesStatusRs = orderLinesStatusStmt.executeQuery();
-            
-            if (orderLinesStatusRs.next()) {
-                summaryData.put("pending_order_lines", orderLinesStatusRs.getInt("pending_order_lines"));
-                summaryData.put("preparing_order_lines", orderLinesStatusRs.getInt("preparing_order_lines"));
-                summaryData.put("in_transit_order_lines", orderLinesStatusRs.getInt("in_transit_order_lines"));
-                summaryData.put("delivered_order_lines", orderLinesStatusRs.getInt("delivered_order_lines"));
-                summaryData.put("cancelled_order_lines", orderLinesStatusRs.getInt("cancelled_order_lines"));
-                summaryData.put("discarded_order_lines", orderLinesStatusRs.getInt("discarded_order_lines"));
-            }
-            orderLinesStatusRs.close();
-            orderLinesStatusStmt.close();
-            
-            // Get top customer - only active customers that existed during the period
+            // Get top customer
             String topCustomerQuery = 
                 "SELECT CONCAT(c.first_name, ' ', c.last_name) as customer_name, " +
                 "COUNT(o.order_id) as order_count " +
@@ -267,7 +364,7 @@ public class AdminOrderReportController {
             customerRs.close();
             customerStmt.close();
             
-            // Get top city - only cities that existed during the period
+            // Get top city
             String topCityQuery = 
                 "SELECT city.city_name, COUNT(o.order_id) as order_count " +
                 "FROM Cities city " +
@@ -309,7 +406,7 @@ public class AdminOrderReportController {
         };
         
         try (Connection conn = DBConnection.getConnection()) {
-            String dateCondition = getDateCondition(filterType);
+            String dateCondition = getDateCondition(filterType, "o");
             String customerDateFilter = getCustomerDateFilterForExistence(filterType);
             String cityDateFilter = getCityDateFilterForExistence(filterType);
             
@@ -352,7 +449,12 @@ public class AdminOrderReportController {
     }
 
     private DefaultTableModel getCustomersData(String filterType) throws SQLException {
-        String[] columnNames = {"Customer ID", "Customer Name", "City", "Total Orders"};
+        // Enhanced columns with order status breakdown
+        String[] columnNames = {
+            "Customer ID", "Customer Name", "City", "Total Orders", 
+            "Total Order Lines", "Refunded Orders", "Discarded Orders", "Paid Orders",
+            "Pending Orders", "Preparing Orders", "In Transit Orders", "Delivered Orders"
+        };
         
         DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -362,17 +464,31 @@ public class AdminOrderReportController {
         };
         
         try (Connection conn = DBConnection.getConnection()) {
-            String dateCondition = getDateCondition(filterType);
+            String dateCondition = getDateCondition(filterType, "o");
             String customerDateFilter = getCustomerDateFilterForExistence(filterType);
             String cityDateFilter = getCityDateFilterForExistence(filterType);
             
+            // FIXED: Proper SQL syntax for LEFT JOIN with conditions
             String customersQuery = 
-                "SELECT c.customer_id, CONCAT(c.first_name, ' ', c.last_name) as customer_name, " +
-                "city.city_name, COUNT(o.order_id) as total_orders " +
+                "SELECT " +
+                "c.customer_id, " +
+                "CONCAT(c.first_name, ' ', c.last_name) as customer_name, " +
+                "city.city_name, " +
+                "COUNT(DISTINCT o.order_id) as total_orders, " +
+                "COUNT(ol.order_line_id) as total_order_lines, " +
+                "SUM(CASE WHEN p.is_refunded = 1 THEN 1 ELSE 0 END) as refunded_orders, " +
+                "SUM(CASE WHEN o.status = 'Discarded' THEN 1 ELSE 0 END) as discarded_orders, " +
+                "SUM(CASE WHEN p.is_paid = 1 THEN 1 ELSE 0 END) as paid_orders, " +
+                "SUM(CASE WHEN o.status = 'Pending' THEN 1 ELSE 0 END) as pending_orders, " +
+                "SUM(CASE WHEN o.status = 'Preparing' THEN 1 ELSE 0 END) as preparing_orders, " +
+                "SUM(CASE WHEN o.status = 'In Transit' THEN 1 ELSE 0 END) as in_transit_orders, " +
+                "SUM(CASE WHEN o.status = 'Delivered' THEN 1 ELSE 0 END) as delivered_orders " +
                 "FROM Customers c " +
                 "JOIN Cities city ON c.city_id = city.city_id " +
-                "LEFT JOIN Orders o ON c.customer_id = o.customer_id AND " + dateCondition +
-                " WHERE " + customerDateFilter + " " +
+                "LEFT JOIN Orders o ON (c.customer_id = o.customer_id AND " + dateCondition + ") " +
+                "LEFT JOIN Order_Lines ol ON o.order_id = ol.order_id " +
+                "LEFT JOIN Payments p ON o.order_id = p.order_id " +
+                "WHERE " + customerDateFilter + " " +
                 "AND " + cityDateFilter + " " +
                 "GROUP BY c.customer_id, c.first_name, c.last_name, city.city_name " +
                 "ORDER BY total_orders DESC";
@@ -385,7 +501,15 @@ public class AdminOrderReportController {
                     rs.getInt("customer_id"),
                     rs.getString("customer_name"),
                     rs.getString("city_name"),
-                    rs.getInt("total_orders")
+                    rs.getInt("total_orders"),
+                    rs.getInt("total_order_lines"),
+                    rs.getInt("refunded_orders"),
+                    rs.getInt("discarded_orders"),
+                    rs.getInt("paid_orders"),
+                    rs.getInt("pending_orders"),
+                    rs.getInt("preparing_orders"),
+                    rs.getInt("in_transit_orders"),
+                    rs.getInt("delivered_orders")
                 };
                 model.addRow(row);
             }
@@ -398,7 +522,12 @@ public class AdminOrderReportController {
     }
 
     private DefaultTableModel getCitiesData(String filterType) throws SQLException {
-        String[] columnNames = {"City ID", "City Name", "Total Orders"};
+        // Enhanced columns with comprehensive order status breakdown
+        String[] columnNames = {
+            "City ID", "City Name", "Total Orders", "Total Order Lines", 
+            "Refunded Orders", "Discarded Orders", "Paid Orders",
+            "Pending Orders", "Preparing Orders", "In Transit Orders", "Delivered Orders"
+        };
         
         DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -408,18 +537,29 @@ public class AdminOrderReportController {
         };
         
         try (Connection conn = DBConnection.getConnection()) {
-            String dateCondition = getDateCondition(filterType);
-            String customerDateFilter = getCustomerDateFilterForExistence(filterType);
+            String dateCondition = getDateCondition(filterType, "o");
             String cityDateFilter = getCityDateFilterForExistence(filterType);
             
+            // FIXED: Proper SQL syntax for LEFT JOIN with conditions
             String citiesQuery = 
-                "SELECT city.city_id, city.city_name, " +
-                "COALESCE(COUNT(o.order_id), 0) as total_orders " +
+                "SELECT " +
+                "city.city_id, " +
+                "city.city_name, " +
+                "COUNT(DISTINCT o.order_id) as total_orders, " +
+                "COUNT(ol.order_line_id) as total_order_lines, " +
+                "SUM(CASE WHEN p.is_refunded = 1 THEN 1 ELSE 0 END) as refunded_orders, " +
+                "SUM(CASE WHEN o.status = 'Discarded' THEN 1 ELSE 0 END) as discarded_orders, " +
+                "SUM(CASE WHEN p.is_paid = 1 THEN 1 ELSE 0 END) as paid_orders, " +
+                "SUM(CASE WHEN o.status = 'Pending' THEN 1 ELSE 0 END) as pending_orders, " +
+                "SUM(CASE WHEN o.status = 'Preparing' THEN 1 ELSE 0 END) as preparing_orders, " +
+                "SUM(CASE WHEN o.status = 'In Transit' THEN 1 ELSE 0 END) as in_transit_orders, " +
+                "SUM(CASE WHEN o.status = 'Delivered' THEN 1 ELSE 0 END) as delivered_orders " +
                 "FROM Cities city " +
                 "LEFT JOIN Customers c ON city.city_id = c.city_id " +
-                "LEFT JOIN Orders o ON c.customer_id = o.customer_id AND " + dateCondition +
-                " WHERE " + customerDateFilter + " " +
-                "AND " + cityDateFilter + " " +
+                "LEFT JOIN Orders o ON (c.customer_id = o.customer_id AND " + dateCondition + ") " +
+                "LEFT JOIN Order_Lines ol ON o.order_id = ol.order_id " +
+                "LEFT JOIN Payments p ON o.order_id = p.order_id " +
+                "WHERE " + cityDateFilter + " " +
                 "GROUP BY city.city_id, city.city_name " +
                 "ORDER BY total_orders DESC, city.city_name ASC";
             
@@ -430,7 +570,15 @@ public class AdminOrderReportController {
                 Object[] row = {
                     rs.getInt("city_id"),
                     rs.getString("city_name"),
-                    rs.getInt("total_orders")
+                    rs.getInt("total_orders"),
+                    rs.getInt("total_order_lines"),
+                    rs.getInt("refunded_orders"),
+                    rs.getInt("discarded_orders"),
+                    rs.getInt("paid_orders"),
+                    rs.getInt("pending_orders"),
+                    rs.getInt("preparing_orders"),
+                    rs.getInt("in_transit_orders"),
+                    rs.getInt("delivered_orders")
                 };
                 model.addRow(row);
             }
@@ -442,26 +590,24 @@ public class AdminOrderReportController {
         return model;
     }
 
-    private String getDateCondition(String filterType) {
+    // FIXED: Added table alias parameter for proper SQL syntax
+    private String getDateCondition(String filterType, String tableAlias) {
         try {
             switch (filterType) {
                 case "Day":
-                    // Use stored filter values instead of reading from view
                     int dayMonth = Integer.parseInt(currentDayMonth.isEmpty() ? view.getDayMonth() : currentDayMonth);
                     int dayDay = Integer.parseInt(currentDayDay.isEmpty() ? view.getDayDay() : currentDayDay);
                     int dayYear = Integer.parseInt(currentDayYear.isEmpty() ? view.getDayYear() : currentDayYear);
-                    return String.format("DATE(o.order_date) = '%04d-%02d-%02d'", dayYear, dayMonth, dayDay);
+                    return String.format("DATE(%s.order_date) = '%04d-%02d-%02d'", tableAlias, dayYear, dayMonth, dayDay);
                     
                 case "Month":
-                    // Use stored filter values instead of reading from view
                     int monthMonth = Integer.parseInt(currentMonthMonth.isEmpty() ? view.getMonthMonth() : currentMonthMonth);
                     int monthYear = Integer.parseInt(currentMonthYear.isEmpty() ? view.getMonthYear() : currentMonthYear);
-                    return String.format("YEAR(o.order_date) = %d AND MONTH(o.order_date) = %d", monthYear, monthMonth);
+                    return String.format("YEAR(%s.order_date) = %d AND MONTH(%s.order_date) = %d", tableAlias, monthYear, tableAlias, monthMonth);
                     
                 case "Year":
-                    // Use stored filter values instead of reading from view
                     int yearYear = Integer.parseInt(currentYearYear.isEmpty() ? view.getYearYear() : currentYearYear);
-                    return String.format("YEAR(o.order_date) = %d", yearYear);
+                    return String.format("YEAR(%s.order_date) = %d", tableAlias, yearYear);
                     
                 default:
                     return "1=1";

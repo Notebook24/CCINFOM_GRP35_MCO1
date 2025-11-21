@@ -12,14 +12,13 @@ public class AdminSettingsController {
 
         loadAdminDetails();
 
-        adminSettingsView.getConfirm().addActionListener(new ActionListener() {
+        adminSettingsView.getConfirmButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!adminSettingsView.validateInputs()) {
                     return;
                 } else {
                     updateAdminDetails();
-                    // Removed openHomePage() - user stays on settings page
                 }
             }
         });
@@ -31,7 +30,7 @@ public class AdminSettingsController {
             }
         });
 
-        adminSettingsView.getChangePassword().addActionListener(new ActionListener() {
+        adminSettingsView.getChangePasswordButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 adminSettingsView.getFrame().dispose();
@@ -50,8 +49,16 @@ public class AdminSettingsController {
             }
         });
 
+        adminSettingsView.getProfileButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Already on profile/settings page, do nothing or refresh
+                loadAdminDetails();
+            }
+        });
+
         // Add deactivate button listener
-        adminSettingsView.getDeactivateButton().addActionListener(new ActionListener() {
+        adminSettingsView.getDeleteButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 deactivateAccount();
@@ -102,8 +109,6 @@ public class AdminSettingsController {
                         "Details updated successfully!",
                         "Success",
                         JOptionPane.INFORMATION_MESSAGE);
-                // User stays on settings page - no navigation needed
-                // The fields already show the updated values since they're bound to the text fields
             }
         } 
         catch (SQLException ex) {
@@ -124,7 +129,6 @@ public class AdminSettingsController {
     }
 
     private void deactivateAccount() {
-        // Confirm with user before deletion
         int confirm = JOptionPane.showConfirmDialog(
             adminSettingsView.getFrame(),
             "WARNING: This will permanently delete your admin account!\n\n" +
@@ -139,13 +143,11 @@ public class AdminSettingsController {
             return;
         }
 
-        // Perform account deletion
         Connection conn = null;
         try {
             conn = DBConnection.getConnection();
             conn.setAutoCommit(false);
 
-            // Delete admin account
             String sql = "DELETE FROM admins WHERE admin_id = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, adminId);
@@ -158,7 +160,6 @@ public class AdminSettingsController {
                             "Account Deleted",
                             JOptionPane.INFORMATION_MESSAGE);
                     
-                    // Return to landing page
                     adminSettingsView.getFrame().dispose();
                     LandingPageView landingPageView = new LandingPageView();
                     new LandingPageController(landingPageView);

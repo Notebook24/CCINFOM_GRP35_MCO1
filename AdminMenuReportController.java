@@ -5,13 +5,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.LocalDate;
 
 public class AdminMenuReportController {
     private AdminMenuReportView view;
     private static AdminMenuReportView currentInstance;
     private Timer autoRefreshTimer;
+    private int adminId;
 
-    public AdminMenuReportController() {
+    public AdminMenuReportController(int adminId) {
+        this.adminId = adminId;
         if (currentInstance != null) {
             currentInstance.getFrame().dispose();
         }
@@ -42,8 +47,55 @@ public class AdminMenuReportController {
             return;
         }
         
+        // Check if the selected date is in the future
+        if (isFutureDate()) {
+            JOptionPane.showMessageDialog(view.getFrame(), 
+                "You cannot select a future date. Maximum allowed is today.", 
+                "Invalid Date", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
         refreshDataWithCurrentFilter();
         view.showSuccessMessage("Filter applied successfully!");
+    }
+
+    private boolean isFutureDate() {
+        try {
+            String filterType = view.getFilterType();
+            // Use PHT timezone (Asia/Manila)
+            ZonedDateTime nowPHT = ZonedDateTime.now(ZoneId.of("Asia/Manila"));
+            LocalDate today = nowPHT.toLocalDate();
+            
+            switch (filterType) {
+                case "Day":
+                    int dayMonth = Integer.parseInt(view.getDayMonth());
+                    int dayDay = Integer.parseInt(view.getDayDay());
+                    int dayYear = Integer.parseInt(view.getDayYear());
+                    LocalDate selectedDay = LocalDate.of(dayYear, dayMonth, dayDay);
+                    return selectedDay.isAfter(today);
+                    
+                case "Month":
+                    int monthMonth = Integer.parseInt(view.getMonthMonth());
+                    int monthYear = Integer.parseInt(view.getMonthYear());
+                    // Check if the selected month is in the future
+                    if (monthYear > today.getYear()) {
+                        return true;
+                    } else if (monthYear == today.getYear() && monthMonth > today.getMonthValue()) {
+                        return true;
+                    }
+                    return false;
+                    
+                case "Year":
+                    int yearYear = Integer.parseInt(view.getYearYear());
+                    return yearYear > today.getYear();
+                    
+                default:
+                    return false;
+            }
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private void refreshDataWithCurrentFilter() {
@@ -85,7 +137,7 @@ public class AdminMenuReportController {
     private void goBackToAdminHome() {
         view.getFrame().dispose();
         AdminHomePageView homePageView = new AdminHomePageView();
-        new AdminHomePageController(homePageView, 1);
+        new AdminHomePageController(homePageView, adminId);
     }
 
     private Map<String, Object> getSummaryData(String filterType) throws SQLException {
@@ -110,8 +162,6 @@ public class AdminMenuReportController {
                 "LEFT JOIN Orders o ON ol.order_id = o.order_id " +
                 (dateCondition.isEmpty() ? "" : " AND " + dateCondition) +
                 " WHERE " + menuDateFilter;
-            
-            System.out.println("Summary Query: " + summaryQuery);
             
             PreparedStatement stmt = conn.prepareStatement(summaryQuery);
             ResultSet rs = stmt.executeQuery();
@@ -139,8 +189,6 @@ public class AdminMenuReportController {
                 " ORDER BY total_quantity DESC " +
                 " LIMIT 1";
             
-            System.out.println("Most Sold Menu Query: " + mostSoldMenuQuery);
-            
             PreparedStatement menuStmt = conn.prepareStatement(mostSoldMenuQuery);
             ResultSet menuRs = menuStmt.executeQuery();
             if (menuRs.next() && menuRs.getInt("total_quantity") > 0) {
@@ -163,8 +211,6 @@ public class AdminMenuReportController {
                 " GROUP BY mc.menu_category_id, mc.menu_category_name " +
                 " ORDER BY total_quantity DESC " +
                 " LIMIT 1";
-            
-            System.out.println("Most Sold Group Query: " + mostSoldGroupQuery);
             
             PreparedStatement groupStmt = conn.prepareStatement(mostSoldGroupQuery);
             ResultSet groupRs = groupStmt.executeQuery();
@@ -221,8 +267,6 @@ public class AdminMenuReportController {
                 " WHERE " + categoryDateFilter +
                 " GROUP BY mc.menu_category_id, mc.menu_category_name, mc.is_available " +
                 " ORDER BY total_revenue DESC";
-            
-            System.out.println("Category Breakdown Query: " + categoryQuery);
             
             PreparedStatement stmt = conn.prepareStatement(categoryQuery);
             ResultSet rs = stmt.executeQuery();
@@ -286,8 +330,6 @@ public class AdminMenuReportController {
                 " WHERE " + menuDateFilter +
                 " GROUP BY m.menu_id, m.menu_name, mc.menu_category_name, m.unit_price, m.is_available " +
                 " ORDER BY total_sold DESC";
-            
-            System.out.println("Menu Report Query: " + menuQuery);
             
             PreparedStatement stmt = conn.prepareStatement(menuQuery);
             ResultSet rs = stmt.executeQuery();

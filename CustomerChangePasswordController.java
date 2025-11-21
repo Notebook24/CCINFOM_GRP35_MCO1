@@ -3,17 +3,68 @@ import java.sql.*;
 import javax.swing.JOptionPane;
 
 public class CustomerChangePasswordController {
-    private CustomerChangePasswordView accountChangePasswordView;
+    private CustomerChangePasswordView changePasswordView;
     private int userId;
 
     public CustomerChangePasswordController(CustomerChangePasswordView view, int id){
-        accountChangePasswordView = view;
+        changePasswordView = view;
         userId = id;
 
-        accountChangePasswordView.getConfirm().addActionListener(new ActionListener() {
+        setupNavigation();
+        setupActionListeners();
+    }
+
+    private void setupNavigation() {
+        // Home button - go to home page
+        changePasswordView.getHomeButton().addActionListener(e -> {
+            changePasswordView.getFrame().dispose();
+            CustomerHomePageView homePageView = new CustomerHomePageView();
+            new CustomerHomePageController(homePageView, userId);
+        });
+
+        // Payments button - go to payment tracker
+        changePasswordView.getPaymentsButton().addActionListener(e -> {
+            changePasswordView.getFrame().dispose();
+            CustomerPaymentTrackerView paymentView = new CustomerPaymentTrackerView();
+            new CustomerPaymentTrackerController(paymentView, userId);
+        });
+
+        // Orders button - go to order tracking page
+        changePasswordView.getOrdersButton().addActionListener(e -> {
+            changePasswordView.getFrame().dispose();
+            CustomerDeliveryTrackerView trackerView = new CustomerDeliveryTrackerView();
+            new CustomerDeliveryTrackerController(trackerView, userId);
+        });
+
+        // Profile button - go to settings page
+        changePasswordView.getProfileButton().addActionListener(e -> {
+            changePasswordView.getFrame().dispose();
+            CustomerSettingsView settingsView = new CustomerSettingsView();
+            new CustomerSettingsController(settingsView, userId);
+        });
+
+        // Logout button - confirm and go to landing page
+        changePasswordView.getLogoutButton().addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                changePasswordView.getFrame(), 
+                "Are you sure you want to logout?", 
+                "Confirm Logout", 
+                JOptionPane.YES_NO_OPTION
+            );
+            
+            if (confirm == JOptionPane.YES_OPTION) {
+                changePasswordView.getFrame().dispose();
+                LandingPageView landingPageView = new LandingPageView();
+                new LandingPageController(landingPageView);
+            }
+        });
+    }
+
+    private void setupActionListeners() {
+        changePasswordView.getChangeButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (!accountChangePasswordView.validateInputs()) {
+                if (!changePasswordView.validateInputs()) {
                     return;
                 } else {
                     changePassword();
@@ -21,33 +72,17 @@ public class CustomerChangePasswordController {
             }
         });
 
-        accountChangePasswordView.getBackButton().addActionListener(new ActionListener() {
+        changePasswordView.getBackButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
-                openSettingsPage();
-            }
-        });
-
-        accountChangePasswordView.getLogoutButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                accountChangePasswordView.getFrame().dispose();
-                CustomerLoginView loginView = new CustomerLoginView();
-                new CustomerLoginController(loginView);
-            }
-        });
-
-        accountChangePasswordView.getSettingsButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
                 openSettingsPage();
             }
         });
     }
 
     private void changePassword() {
-        String oldPassword = accountChangePasswordView.getOldPassword();
-        String newPassword = accountChangePasswordView.getNewPassword();
+        String oldPassword = changePasswordView.getOldPassword();
+        String newPassword = changePasswordView.getNewPassword();
 
         String checkSql = "SELECT password FROM customers WHERE customer_id = ?";
         String updateSql = "UPDATE customers SET password = ? WHERE customer_id = ?";
@@ -62,7 +97,7 @@ public class CustomerChangePasswordController {
                 String currentPassword = rs.getString("password");
 
                 if (!currentPassword.equals(oldPassword)){
-                    accountChangePasswordView.getWarningLabel().setText("Old password is incorrect.");
+                    changePasswordView.getWarningLabel().setText("Old password is incorrect.");
                     return;
                 }
 
@@ -72,14 +107,14 @@ public class CustomerChangePasswordController {
                     int rowsUpdated = updateStmt.executeUpdate();
 
                     if (rowsUpdated > 0) {
-                        JOptionPane.showMessageDialog(accountChangePasswordView.getFrame(),
+                        JOptionPane.showMessageDialog(changePasswordView.getFrame(),
                                 "Password updated successfully!",
                                 "Success",
                                 JOptionPane.INFORMATION_MESSAGE);
                         openSettingsPage();
                     } 
                     else{
-                        JOptionPane.showMessageDialog(accountChangePasswordView.getFrame(),
+                        JOptionPane.showMessageDialog(changePasswordView.getFrame(),
                                 "Failed to update password.",
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
@@ -87,13 +122,13 @@ public class CustomerChangePasswordController {
                 }
             } 
             else{
-                accountChangePasswordView.getWarningLabel().setText("User not found.");
+                changePasswordView.getWarningLabel().setText("User not found.");
             }
 
         } 
         catch (SQLException ex){
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(accountChangePasswordView.getFrame(),
+            JOptionPane.showMessageDialog(changePasswordView.getFrame(),
                     "An error occurred while changing password.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
@@ -101,8 +136,7 @@ public class CustomerChangePasswordController {
     }
 
     private void openSettingsPage(){
-        accountChangePasswordView.getFrame().dispose();
-
+        changePasswordView.getFrame().dispose();
         CustomerSettingsView settingsView = new CustomerSettingsView();
         new CustomerSettingsController(settingsView, userId);
     }

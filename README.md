@@ -1,5 +1,5 @@
 1. To compile the program in the Command Line, Use:
-javac -cp ".;mysql-connector-j-9.5.0.jar" *.java
+javac AppDriver.java
 
 2. To run the program in the Command Line, Use:
 java -cp ".;mysql-connector-j-9.5.0.jar" AppDriver

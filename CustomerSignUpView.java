@@ -67,7 +67,7 @@ public class CustomerSignUpView {
         addressPanel.setLayout(new BoxLayout(addressPanel, BoxLayout.Y_AXIS));
         addressPanel.setBackground(Color.WHITE);
 
-        JLabel addressLabel = new JLabel("Street Address");
+        JLabel addressLabel = new JLabel("Address");
         addressLabel.setFont(new Font("Helvetica Neue", Font.BOLD, 13));
         addressLabel.setForeground(new Color(198, 40, 40));
         addressLabel.setAlignmentX(Component.LEFT_ALIGNMENT);

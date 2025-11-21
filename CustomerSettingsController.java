@@ -5,19 +5,96 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JOptionPane;
 
 public class CustomerSettingsController {
     private CustomerSettingsView customerSettingsView;
     private int customerId;
+    private List<String> validCities = new ArrayList<>();
 
     public CustomerSettingsController(CustomerSettingsView view, int id){
         customerSettingsView = view;
         customerId = id;
 
+        loadValidCities(); // Load cities when controller is created
         loadCustomerDetails();
+        setupNavigation();
+        setupActionListeners();
+    }
 
-        customerSettingsView.getConfirm().addActionListener(new ActionListener() {
+    private void loadValidCities() {
+        validCities.clear();
+        String sql = "SELECT city_name FROM Cities WHERE is_available = 1 ORDER BY city_name";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String city = rs.getString("city_name");
+                if (city != null && !city.trim().isEmpty()) {
+                    validCities.add(city.trim());
+                }
+            }
+            // Set the valid cities in the view
+            customerSettingsView.setValidCities(validCities);
+        } catch (SQLException ex) {
+            System.err.println("Warning: unable to load cities: " + ex.getMessage());
+            JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
+                    "Warning: Unable to load city data. Address validation may not work properly.",
+                    "Database Warning",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void setupNavigation() {
+        // Home button - go to home page
+        customerSettingsView.getHomeButton().addActionListener(e -> {
+            customerSettingsView.getFrame().dispose();
+            CustomerHomePageView homePageView = new CustomerHomePageView();
+            new CustomerHomePageController(homePageView, customerId);
+        });
+
+        // Payments button - go to payment tracker
+        customerSettingsView.getPaymentsButton().addActionListener(e -> {
+            customerSettingsView.getFrame().dispose();
+            CustomerPaymentTrackerView paymentView = new CustomerPaymentTrackerView();
+            new CustomerPaymentTrackerController(paymentView, customerId);
+        });
+
+        // Orders button - go to order tracking page
+        customerSettingsView.getOrdersButton().addActionListener(e -> {
+            customerSettingsView.getFrame().dispose();
+            CustomerDeliveryTrackerView trackerView = new CustomerDeliveryTrackerView();
+            new CustomerDeliveryTrackerController(trackerView, customerId);
+        });
+
+        // Profile button - refresh current page (already on profile)
+        customerSettingsView.getProfileButton().addActionListener(e -> {
+            customerSettingsView.getFrame().dispose();
+            CustomerSettingsView settingsView = new CustomerSettingsView();
+            new CustomerSettingsController(settingsView, customerId);
+        });
+
+        // Logout button - confirm and go to landing page
+        customerSettingsView.getLogoutButton().addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                customerSettingsView.getFrame(), 
+                "Are you sure you want to logout?", 
+                "Confirm Logout", 
+                JOptionPane.YES_NO_OPTION
+            );
+            
+            if (confirm == JOptionPane.YES_OPTION) {
+                customerSettingsView.getFrame().dispose();
+                LandingPageView landingPageView = new LandingPageView();
+                new LandingPageController(landingPageView);
+            }
+        });
+    }
+
+    private void setupActionListeners() {
+        customerSettingsView.getConfirmButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
                 if (hasActiveOrders()) {
@@ -28,7 +105,7 @@ public class CustomerSettingsController {
                     return;
                 }
                 
-                if (!customerSettingsView.validateInputs()){
+                if (!validateInputs()){
                     return;
                 } else {
                     updateCustomerDetails();
@@ -43,7 +120,7 @@ public class CustomerSettingsController {
             }
         });
 
-        customerSettingsView.getChangePassword().addActionListener(new ActionListener() {
+        customerSettingsView.getChangePasswordButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
                 if (hasActiveOrders()) {
@@ -68,6 +145,84 @@ public class CustomerSettingsController {
                 deleteAccount();
             }
         });
+    }
+
+    private boolean validateInputs() {
+        // Get field values
+        String firstName = customerSettingsView.getFirstNameField().getText().trim();
+        String lastName = customerSettingsView.getLastNameField().getText().trim();
+        String email = customerSettingsView.getEmailField().getText().trim();
+        String address = customerSettingsView.getAddressField().getText().trim();
+
+        // Check for empty fields
+        if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || address.isEmpty()) {
+            JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
+                    "All fields are required.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Validate email format
+        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
+                    "Please enter a valid email address.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Validate address format (should contain at least 2 commas for street, city, etc.)
+        String[] addressParts = address.split(",");
+        if (addressParts.length < 3) {
+            JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
+                    "Please enter a complete address in format: Street, Barangay, City",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Extract and validate city - using same technique as sign up
+        String cityName = addressParts[2].trim();
+        if (!isValidCity(cityName)) {
+            JOptionPane.showMessageDialog(customerSettingsView.getFrame(),
+                    "City '" + cityName + "' is not serviced in our area.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isValidCity(String cityName) {
+        // Use the same technique as sign up: remove "City" suffix and check against database
+        String normalizedCity = cityName.replaceAll("(?i)\\s*city$", "").trim();
+        
+        String query = "SELECT COUNT(*) FROM Cities WHERE city_name LIKE ? AND is_available = 1";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, "%" + normalizedCity + "%");
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    int count = rs.getInt(1);
+                    return count > 0;
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                customerSettingsView.getFrame(),
+                "Error validating city. Please try again.",
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+        
+        return false;
     }
 
     private void loadCustomerDetails(){
@@ -102,17 +257,20 @@ public class CustomerSettingsController {
     }
 
     private void updateCustomerDetails(){
-        String firstName = customerSettingsView.getFirstName().trim();
-        String lastName = customerSettingsView.getLastName().trim();
-        String email = customerSettingsView.getEmail().trim();
-        String address = customerSettingsView.getAddress().trim();
+        String firstName = customerSettingsView.getFirstNameField().getText().trim();
+        String lastName = customerSettingsView.getLastNameField().getText().trim();
+        String email = customerSettingsView.getEmailField().getText().trim();
+        String address = customerSettingsView.getAddressField().getText().trim();
 
-        // Extract city from address (3rd value after 2 commas)
+        // Extract city from address (3rd value after 2 commas) - same technique as sign up
         String[] parts = address.split(",");
         String cityName = parts.length >= 3 ? parts[2].trim() : "";
+        
+        // Normalize city name by removing "City" suffix
+        String normalizedCity = cityName.replaceAll("(?i)\\s*city$", "").trim();
 
-        // Get city_id from Cities table
-        int cityId = getCityId(cityName);
+        // Get city_id from Cities table using same technique as sign up
+        int cityId = getCityId(normalizedCity);
         
         String sql = "UPDATE customers SET first_name = ?, last_name = ?, email = ?, address = ?, city_id = ? WHERE customer_id = ? AND is_active = 1";
         try (Connection conn = DBConnection.getConnection();
@@ -267,15 +425,15 @@ public class CustomerSettingsController {
         return username + "_deleted_" + timestamp + "@gmail.com";
     }
 
-    // Helper method to get city_id from Cities table
+    // Helper method to get city_id from Cities table - using same technique as sign up
     private int getCityId(String cityName){
         int id = 0; // default in case city not found
         if (cityName.isEmpty()) return id;
         
-        String sql = "SELECT city_id FROM Cities WHERE city_name = ?";
+        String sql = "SELECT city_id FROM Cities WHERE city_name LIKE ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)){
-            ps.setString(1, cityName);
+            ps.setString(1, "%" + cityName + "%");
             ResultSet rs = ps.executeQuery();
             if (rs.next()){
                 id = rs.getInt("city_id");

@@ -6,72 +6,164 @@ import java.awt.*;
  */
 public class AdminChangePasswordView {
     private JFrame frame;
-    private JPanel headerPanel, formPanel;
-    private JButton logoutButton, settingsButton;
-    private JButton confirmButton, backButton;
-    private JPasswordField oldPasswordField, newPasswordField, confirmPasswordField;
-    private JLabel logoLabel, warningLabel;
+    private JPanel headerPanel, logoPanel, navPanel;
+    private JButton profileButton, logoutButton;
+    private JButton changeButton, backButton;
+    private JTextField currentPasswordField, newPasswordField, confirmPasswordField;
+    private JLabel warningLabel, logoLabel;
 
     /**
      * Constructor for AdminChangePasswordView class
      */
     public AdminChangePasswordView() {
-        frame = new JFrame("Admin Change Password");
+        frame = new JFrame("Change Password");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(500, 350);
+        frame.setSize(1920, 1080);
         frame.setLayout(new BorderLayout());
         frame.setLocationRelativeTo(null);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
+        // ================= HEADER ==================
         headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        logoLabel = new JLabel("Logo of Restaurant");
-        logoutButton = new JButton("Log out");
-        settingsButton = new JButton("Back to Settings");
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(30, 100, 20, 100));
+        headerPanel.setBackground(Color.WHITE);
 
-        JPanel rightHeaderPanel = new JPanel();
-        rightHeaderPanel.add(logoutButton);
-        rightHeaderPanel.add(settingsButton);
+        // Left: Logo
+        logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        logoPanel.setBackground(Color.WHITE);
 
-        headerPanel.add(logoLabel, BorderLayout.WEST);
-        headerPanel.add(rightHeaderPanel, BorderLayout.EAST);
+        // Load and resize logo image safely
+        ImageIcon rawLogo = new ImageIcon("design_images/koreanexpress-logo.png");
+        Image scaledLogo = rawLogo.getImage().getScaledInstance(300, 90, Image.SCALE_SMOOTH);
+        ImageIcon logoIcon = new ImageIcon(scaledLogo);
+
+        logoLabel = new JLabel(logoIcon);
+        logoPanel.add(logoLabel);
+
+        // Right: Navigation buttons - Only Profile and Logout
+        navPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 50, 20));
+        navPanel.setBackground(Color.WHITE);
+
+        profileButton = makeNavButton("Profile");
+        logoutButton = makeNavButton("Log Out");
+
+        navPanel.add(profileButton);
+        navPanel.add(logoutButton);
+
+        headerPanel.add(logoPanel, BorderLayout.WEST);
+        headerPanel.add(navPanel, BorderLayout.EAST);
         frame.add(headerPanel, BorderLayout.NORTH);
+        
+        //------------------------------------
+        // CENTER FORM PANEL
+        //------------------------------------
+        JPanel centerPanel = new JPanel();
+        centerPanel.setBackground(Color.WHITE);
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(50, 400, 50, 400));
 
-        formPanel = new JPanel();
-        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
-        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
+        // Back button
+        backButton = createRoundedButton("Back");
+        backButton.setPreferredSize(new Dimension(100, 35));
+        backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JPanel backPanel = new JPanel();
+        backPanel.setBackground(Color.WHITE);
+        backPanel.add(backButton);
+        centerPanel.add(backPanel);
 
+        // Warning label
         warningLabel = new JLabel("", SwingConstants.CENTER);
         warningLabel.setForeground(Color.RED);
         warningLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        formPanel.add(warningLabel);
-        formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        warningLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        centerPanel.add(warningLabel);
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 30)));
 
-        oldPasswordField = new JPasswordField();
-        addField(formPanel, "Old Password:", oldPasswordField);
+        //------------------------------------
+        // PASSWORD FIELDS - LABELS BESIDE FIELDS
+        //------------------------------------
+        currentPasswordField = createTextField();
+        newPasswordField = createTextField();
+        confirmPasswordField = createTextField();
 
-        newPasswordField = new JPasswordField();
-        addField(formPanel, "New Password:", newPasswordField);
+        centerPanel.add(createHorizontalField("Current Password", currentPasswordField));
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        centerPanel.add(createHorizontalField("New Password", newPasswordField));
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        centerPanel.add(createHorizontalField("Confirm Password", confirmPasswordField));
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 30)));
 
-        confirmPasswordField = new JPasswordField();
-        addField(formPanel, "Confirm Password:", confirmPasswordField);
+        //------------------------------------
+        // BUTTONS
+        //------------------------------------
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        btnRow.setBackground(Color.WHITE);
 
-        confirmButton = new JButton("Confirm");
-        backButton = new JButton("Back");
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
-        buttonsPanel.add(confirmButton);
-        buttonsPanel.add(backButton);
-        formPanel.add(buttonsPanel);
+        changeButton = createRoundedButton("Change Password");
+        changeButton.setPreferredSize(new Dimension(180, 40));
 
-        frame.add(formPanel, BorderLayout.CENTER);
+        btnRow.add(changeButton);
+        centerPanel.add(btnRow);
+
+        frame.add(centerPanel, BorderLayout.CENTER);
+
         frame.setVisible(true);
     }
 
-    private void addField(JPanel panel, String label, JPasswordField field) {
-        JPanel row = new JPanel(new BorderLayout(10, 0));
-        row.add(new JLabel(label), BorderLayout.WEST);
-        row.add(field, BorderLayout.CENTER);
-        panel.add(row);
-        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+    private JButton makeNavButton(String text) {
+        JButton b = new JButton(text);
+        b.setFont(new Font("SansSerif", Font.BOLD, 20));
+        b.setContentAreaFilled(false);
+        b.setBorderPainted(false);
+        b.setFocusPainted(false);
+        b.setForeground(new Color(230, 0, 0));
+        return b;
+    }
+
+    private JPanel createHorizontalField(String label, JTextField field) {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        panel.setBackground(Color.WHITE);
+        panel.setMaximumSize(new Dimension(600, 40));
+        
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("SansSerif", Font.BOLD, 16));
+        lbl.setPreferredSize(new Dimension(150, 30));
+        lbl.setHorizontalAlignment(SwingConstants.RIGHT);
+        lbl.setForeground(Color.RED);
+        
+        field.setPreferredSize(new Dimension(300, 35));
+        field.setHorizontalAlignment(JTextField.LEFT);
+        
+        panel.add(lbl);
+        panel.add(field);
+        
+        return panel;
+    }
+
+    private JTextField createTextField() {
+        JTextField f = new JTextField();
+        f.setPreferredSize(new Dimension(300, 35));
+        f.setHorizontalAlignment(JTextField.LEFT);
+        f.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        f.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)
+        ));
+        return f;
+    }
+
+    private JButton createRoundedButton(String text) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setForeground(Color.BLACK);
+        button.setBackground(new Color(255, 180, 180));
+        button.setFont(new Font("SansSerif", Font.BOLD, 14));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 150, 150), 1),
+                BorderFactory.createEmptyBorder(10, 20, 10, 20)
+        ));
+        return button;
     }
 
     public boolean validateInputs() {
@@ -98,36 +190,40 @@ public class AdminChangePasswordView {
         return true;
     }
 
+    //------------------------------------
+    // GETTERS
+    //------------------------------------
+
     public JFrame getFrame() {
         return frame;
     }
 
-    public JButton getConfirm() {
-        return confirmButton;
+    public JButton getChangeButton() {
+        return changeButton;
     }
 
     public JButton getBackButton() {
         return backButton;
     }
 
+    public JButton getProfileButton() {
+        return profileButton;
+    }
+
     public JButton getLogoutButton() {
         return logoutButton;
     }
 
-    public JButton getSettingsButton() {
-        return settingsButton;
-    }
-
     public String getOldPassword() {
-        return new String(oldPasswordField.getPassword());
+        return currentPasswordField.getText().trim();
     }
 
     public String getNewPassword() {
-        return new String(newPasswordField.getPassword());
+        return newPasswordField.getText().trim();
     }
 
     public String getConfirmPassword() {
-        return new String(confirmPasswordField.getPassword());
+        return confirmPasswordField.getText().trim();
     }
 
     public JLabel getWarningLabel() {

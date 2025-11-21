@@ -6,7 +6,7 @@ public class DBConnection{
     /**
      * Link to the database, tells the Java file to use JDBC.
      */
-    private static final String URL = "jdbc:mysql://localhost:3306/S20_GROUP3_Database?connectionTimeZone=UTC&serverTimezone=UTC"; //Stay the same (since lahat naman ng MySQL default 3306 ung localhost)
+    private static final String URL = "jdbc:mysql://localhost:3306/CCINFOM_S20_03_DBCREATION?connectionTimeZone=UTC&serverTimezone=UTC"; //Stay the same (since lahat naman ng MySQL default 3306 ung localhost)
     /**
      * Name of the user of the SQL account.
      */ 
